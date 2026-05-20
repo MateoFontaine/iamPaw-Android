@@ -4,11 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+// 1. Android Studio te va a pedir importar tu pantalla (suele agregarse sola)
+import com.example.iampaw.screens.SplashScreen
 
 @Composable
 fun NavigationStack(navController: NavHostController) {
-    // NavHost es el escenario.
-    // startDestination dicta que la app arranca siempre en el Splash Screen (CU-01)
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
@@ -16,7 +16,8 @@ fun NavigationStack(navController: NavHostController) {
 
         // CU-01: Splash Screen
         composable(route = Screen.Splash.route) {
-            // Acá adentro después llamaremos a la vista real (ej: SplashScreen(navController))
+            // 2. ¡Acá va la línea mágica! Llamamos a la vista que acabas de crear
+            SplashScreen(navController = navController)
         }
 
         // CU-02: Autenticación con Google
