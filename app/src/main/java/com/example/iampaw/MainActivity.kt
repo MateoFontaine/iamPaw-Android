@@ -4,19 +4,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.navigation.compose.rememberNavController
+import com.example.iampaw.components.NavigationStack
 import com.example.iampaw.ui.theme.IamPawTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Esto hace que la app ocupe toda la pantalla (hasta la barra de estado arriba)
         enableEdgeToEdge()
 
         setContent {
             IamPawTheme {
-                // Acá adentro vamos a inyectar el NavigationStack en el próximo paso
-                // tal cual como lo hizo el profe Gladkoff.
+                // 1. Creamos al "chofer" que va a manejar los viajes
+                val navController = rememberNavController()
+
+                // 2. Encendemos el motor pasándole el chofer
+                NavigationStack(navController = navController)
             }
         }
     }
