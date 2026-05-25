@@ -165,7 +165,7 @@ fun FeedScreen(navController: NavController) {
                     }
 
                     // Perfil
-                    IconButton(onClick = { /* Perfil */ }) {
+                    IconButton(onClick = { navController.navigate(Screen.Profile.route) }) {
                         Icon(
                             imageVector = Icons.Outlined.Person,
                             contentDescription = "Perfil",
