@@ -11,6 +11,7 @@ import com.example.iampaw.screens.FeedScreen
 import com.example.iampaw.screens.SplashScreen
 import com.example.iampaw.screens.LoginScreen
 import com.example.iampaw.screens.ReportScreen
+import com.example.iampaw.screens.ProfileScreen
 import com.google.firebase.auth.FirebaseAuth // Import clave para leer la sesión
 
 
@@ -59,6 +60,11 @@ fun NavigationStack(navController: NavHostController) {
         // CU-05: Detalle del Reporte
         composable(route = Screen.Detail.route) {
             // DetailScreen(navController)
+        }
+
+        // CU-06: Perfil del Usuario
+        composable(route = Screen.Profile.route) {
+            ProfileScreen(navController = navController)
         }
     }
 }
