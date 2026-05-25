@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "892894302329",
+    "project_id": "iampawandroid",
+    "storage_bucket": "iampawandroid.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:892894302329:android:b727712764131dbb1b44a8",
+        "android_client_info": {
+          "package_name": "com.example.iampaw"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "892894302329-9nq7d0chpumojm0ddm97261rbjpjdn33.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.iampaw",
+            "certificate_hash": "b0798d90df19c2c841cb6c53c0fdc364618000f1"
+          }
+        },
+        {
+          "client_id": "892894302329-uuio0fu0c0keehrj4es5b0dr8nm4jdnd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9Gy1Dsd4Uu0l-bm5tqkEDHkC1rKIyJ_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "892894302329-uuio0fu0c0keehrj4es5b0dr8nm4jdnd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
