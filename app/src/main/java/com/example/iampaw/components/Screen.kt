@@ -15,4 +15,7 @@ sealed class Screen(val route: String) {
 
     // El detalle del match o de la mascota específica
     object Detail : Screen("detail_screen")
+
+    // Perfil del usuario
+    object Profile : Screen("profile_screen")
 }
