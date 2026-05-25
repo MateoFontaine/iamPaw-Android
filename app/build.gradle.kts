@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services") // Este es el de Firebase, está perfecto que quede
 }
 
 android {
@@ -47,13 +48,18 @@ dependencies {
     implementation(libs.androidx.compose.material3)
 
     // --- EL ARSENAL DE IAMPAW (Llamando a tu archivo .toml) ---
+    // --- EL ARSENAL DE IAMPAW (Llamando a tu archivo .toml) ---
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
-    implementation(platform(libs.firebase.bom))
+    implementation(platform(libs.firebase.bom)) // <- El menú principal que ya tenías
+    implementation("com.google.firebase:firebase-auth") // <- Herramienta 1: Firebase Auth
+    implementation("com.google.android.gms:play-services-auth:21.1.1") // <- Herramienta 2: Login de Google
     implementation(libs.glide.compose)
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("androidx.compose.material:material-icons-extended")
 
     // --- TESTING ---
     testImplementation(libs.junit)
