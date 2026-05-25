@@ -1,0 +1,307 @@
+package com.example.iampaw.screens
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportScreen(
+    navController: NavController,
+    viewModel: ReportViewModel = viewModel()
+) {
+    val breeds by viewModel.breeds.collectAsState()
+    var breedText by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Nuevos estados para el formulario
+    var isLost by remember { mutableStateOf(true) } // true = Perdido, false = Encontrado
+    var locationText by remember { mutableStateOf("") }
+
+    // Launcher para Galería
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> imageUri = uri }
+
+    val orangePaw = Color(0xFFFF9800)
+    val bgColor = Color(0xFFFBFBFB)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor)
+            .statusBarsPadding() // Respeta la barra de estado del celular
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+    ) {
+        // --- HEADER MARCA IAMPAW ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.offset(x = (-12).dp) // Compensa el padding interno del botón
+            ) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver", tint = Color.Black)
+            }
+
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(color = Color.Black)) { append("iam") }
+                    withStyle(SpanStyle(color = orangePaw)) { append("Paw") }
+                },
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black
+            )
+        }
+
+        Text(
+            text = "Completá los datos para emitir la alerta.",
+            color = Color.Gray,
+            fontSize = 15.sp,
+            modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
+        )
+
+        // --- SELECTOR: PERDIDO O ENCONTRADO ---
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color(0xFFEEEEEE))
+                .padding(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Botón Perdido
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (isLost) Color.White else Color.Transparent)
+                    .clickable { isLost = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Busco a mi mascota",
+                    fontWeight = FontWeight.Bold,
+                    color = if (isLost) Color.Black else Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
+            // Botón Encontrado
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (!isLost) Color.White else Color.Transparent)
+                    .clickable { isLost = false },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Encontré una mascota",
+                    fontWeight = FontWeight.Bold,
+                    color = if (!isLost) Color.Black else Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- SECTOR FOTO (Cuadro punteado) ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFFF5F5F5))
+                .clickable { galleryLauncher.launch("image/*") }
+                .drawDashedBorder(orangePaw, 20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (imageUri == null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.AddAPhoto, contentDescription = null, modifier = Modifier.size(40.dp), tint = Color.Gray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Toca para subir una foto", fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+                    Text("Soporta JPG, PNG", fontSize = 12.sp, color = Color.Gray)
+                }
+            } else {
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- BUSCADOR DE RAZA (Searchable Dropdown) ---
+        Text("Raza detectada", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = breedText,
+                onValueChange = { breedText = it; expanded = true },
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                placeholder = { Text("Ej: Golden Retriever") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = orangePaw,
+                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Color.White
+                )
+            )
+
+            val filteredOptions = breeds.filter { it.name.contains(breedText, ignoreCase = true) }
+            if (filteredOptions.isNotEmpty()) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(Color.White)
+                ) {
+                    filteredOptions.take(5).forEach { breed ->
+                        DropdownMenuItem(
+                            text = { Text(breed.name) },
+                            onClick = {
+                                breedText = breed.name
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- UBICACIÓN + GPS ---
+        Text("Ubicación", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = locationText,
+                onValueChange = { locationText = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("¿Dónde fue visto?") },
+                leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray) },
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = orangePaw,
+                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Color.White
+                )
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            // Botón GPS
+            IconButton(
+                onClick = { /* Lógica para obtener lat/long del dispositivo */ },
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Color(0xFFF5E6D3), RoundedCornerShape(16.dp))
+            ) {
+                Icon(Icons.Outlined.MyLocation, contentDescription = "Usar mi ubicación", tint = orangePaw)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- COLOR Y TAMAÑO ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedTextField(
+                value = "", onValueChange = {},
+                modifier = Modifier.weight(1f),
+                label = { Text("Color principal") },
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
+            )
+            OutlinedTextField(
+                value = "", onValueChange = {},
+                modifier = Modifier.weight(1f),
+                label = { Text("Tamaño aprox.") },
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- DETALLES ---
+        OutlinedTextField(
+            value = "", onValueChange = {},
+            modifier = Modifier.fillMaxWidth().height(120.dp),
+            label = { Text("Detalles adicionales") },
+            placeholder = { Text("Llevaba un collar azul, está asustado...") },
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // --- BOTÓN PUBLICAR ---
+        Button(
+            onClick = { /* Lógica de Firestore */ },
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = orangePaw)
+        ) {
+            Text(if (isLost) "Publicar Búsqueda" else "Reportar Mascota", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Outlined.Send, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+
+        Spacer(modifier = Modifier.height(40.dp)) // Padding final para que respire al scrollear
+    }
+}
+
+// Extensión para el borde punteado
+fun Modifier.drawDashedBorder(color: Color, radius: androidx.compose.ui.unit.Dp) = this.drawWithContent {
+    drawContent()
+    drawRoundRect(
+        color = color,
+        style = Stroke(
+            width = 2.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(15f, 15f), 0f)
+        ),
+        cornerRadius = CornerRadius(radius.toPx())
+    )
+}
