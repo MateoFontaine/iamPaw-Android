@@ -1,48 +1,54 @@
-# 🐾 iamPaw - Bitácora de Desarrollo y Roadmap
+# 🐾 iamPaw - Smart Pet Recovery App
 
-Este archivo sirve como único punto de verdad para el desarrollo de la aplicación **iamPaw** (Android). Detalla las decisiones de arquitectura tomadas en base a la cátedra del **profe Gladkoff (UADE)**, el estado actual del repositorio y los próximos pasos técnicos.
+<p align="left">
+  <img src="https://img.shields.io/badge/Kotlin-1.9.0-purple.svg?style=flat&logo=kotlin" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-UI-blue.svg?style=flat&logo=android" alt="Jetpack Compose" />
+  <img src="https://img.shields.io/badge/Firebase-Auth-orange.svg?style=flat&logo=firebase" alt="Firebase" />
+  <img src="https://img.shields.io/badge/Architecture-MVVM-success.svg?style=flat" alt="MVVM" />
+</p>
+
+iamPaw es una aplicación móvil nativa diseñada para modernizar y agilizar la búsqueda de mascotas perdidas. Utilizando un enfoque centrado en la comunidad, inteligencia artificial y tecnología QR, la app permite a los usuarios reportar mascotas perdidas o encontradas de manera rápida, eficiente y centralizada.
 
 ---
 
-## 🛠️ Stack Tecnológico & Arquitectura Base
+## ✨ Features Principales (Vertical Slices)
+
+* **🔐 Autenticación Segura (Zero-Friction):** Inicio de sesión persistente e integrado con Google Sign-In mediante Firebase Auth.
+* **🏠 Feed Inmersivo:** Muro principal con tarjetas de mascotas perdidas/encontradas, con navegación fluida tipo "burbuja".
+* **📸 Reporte Inteligente:** Flujo de creación de reportes respaldado por **The Dog API** para la identificación precisa de razas y manejo de estados mediante ViewModels.
+* **👤 Perfil y Gamificación:** Panel de usuario dinámico que expone métricas de impacto (alertas activas, mascotas ayudadas) para incentivar la participación comunitaria.
+
+---
+
+## 🛠️ Stack Tecnológico
+
+La aplicación está construida siguiendo los estándares modernos de desarrollo Android:
+
 * **Lenguaje:** Kotlin
-* **UI Framework:** Jetpack Compose (Modern Inmersion via `enableEdgeToEdge`)
-* **Gestión de Dependencias:** Version Catalog (`libs.versions.toml`) + Gradle Kotlin DSL (`.gradle.kts`)
-* **Estructura de Paquetes ("Modo UADE"):**
-    * `com.example.iampaw.components`: Motores del sistema (Navegación, Rutas estáticas).
-    * `com.example.iampaw.screens`: Vistas/Pantallas de la aplicación.
-    * `com.example.iampaw.ui.theme`: Configuración de estilos, colores y tipografías.
-* **Control de Versiones:** Git con estándares profesionales (*Conventional Commits*).
-* **Estrategia de Datos:** Datos reales desde el inicio (alimentados manualmente en la base de datos). **No se utilizará data mockeada.**
+* **UI Toolkit:** Jetpack Compose (Material Design 3)
+* **Arquitectura:** MVVM (Model-View-ViewModel)
+* **Navegación:** Navigation Compose (Single-Activity Architecture)
+* **Backend & Auth:** Firebase
+* **Networking:** Retrofit2 + OkHttp (Integración con APIs REST)
+* **Imágenes:** Coil (Carga asíncrona de imágenes)
 
 ---
 
-## 📅 Registro de Tareas Realizadas (Done)
+## 🌿 Flujo de Trabajo y Git Flow
 
-### Fase 1: Configuración de la Fábrica e Infraestructura
-* [x] **Sincronización de Gradle:** Solución de dependencias en rojo mediante catálogo centralizado. Descarga exitosa de Room, Retrofit, Firebase BoM y Glide Compose.
-* [x] **Inicialización del Repositorio Local:** Activación de Git en el proyecto.
-* [x] **Identidad de Git Configurada:** Configuración global de `user.name` y `user.email` en la Mac de Mateo para enlazar correctamente los commits con la cuenta oficial de GitHub.
-* [x] **Primer Commit Oficial:** Guardado con nomenclatura estándar: `chore: configuracion inicial de dependencias y arquitectura base`.
-* [x] **Conexión Remota y Autenticación:** Repositorio enlazado a GitHub mediante *Personal Access Token (PAT)* clásico. Subida exitosa a la rama `main`.
-* [x] **Estructura de Directorios:** Creación de los paquetes `components` y `screens` dentro de `com.example.iampaw`.
-* [x] **Limpieza de `MainActivity.kt`:** Remoción del código genérico de plantilla. El archivo quedó como un contenedor minimalista listo para la inyección de la navegación y lógica de ciclo de vida / Firebase.
+Este repositorio sigue una estrategia estricta de branching orientada a CI/CD y revisiones de código eficientes:
+
+* `main`: Entorno de producción. Código 100% estable.
+* `develop`: Rama principal de integración. Refleja el estado actual del próximo release.
+* `feature/*`: Ramas efímeras creadas por los desarrolladores para nuevas funcionalidades (ej. `feature/pantalla-feed`). Se integran a `develop` mediante Pull Requests.
 
 ---
 
-## 📋 Pendientes y Próximos Pasos (Backlog)
+## 🚀 Instalación y Uso Local
 
-### Fase 2: Control de Versiones Avanzado (GitFlow)
-* [ ] **Crear la rama `develop`:** Generar el paso intermedio para integrar el código antes de mandar a `main`.
-* [ ] **Crear la feature branch para Navegación:** `feature/navegacion-base`.
+Para correr este proyecto en tu entorno local:
 
-### Fase 3: Arquitectura de Navegación (Modo UADE)
-* [ ] **Crear `Screen.kt`:** Definir el mapa de rutas estáticas de la aplicación dentro del paquete `components`.
-* [ ] **Crear `NavigationStack.kt`:** Programar el componente composable que actuará como el GPS de la app usando `NavHost` y `composable()`.
-* [ ] **Inyectar Navegación in `MainActivity.kt`:** Conectar el `navController` al flujo principal.
-
-### Fase 4: Desarrollo de Pantallas (Screens) con Datos Reales
-* [ ] **Feature Branch:** `feature/pantalla-login` (Integración de Firebase Auth compartida en MainActivity).
-* [ ] **Feature Branch:** `feature/pantalla-feed` (Lista de mascotas conectada a base de datos real).
-* [ ] **Feature Branch:** `feature/pantalla-scanner` (Cámara y lectura QR).
-* [ ] **Feature Branch:** `feature/pantalla-detalle` (Información de la chapita escaneada).
+1. Clonar el repositorio:
+   ```bash
+   git clone [https://github.com/MateoFontaine/iamPaw-Android.git](https://github.com/MateoFontaine/iamPaw-Android.git)
+   
