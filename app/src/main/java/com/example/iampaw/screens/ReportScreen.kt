@@ -52,18 +52,17 @@ fun ReportScreen(
     var isLost by remember { mutableStateOf(true) }
     var locationText by remember { mutableStateOf("") }
 
-    // Estados nuevos para el diálogo de selección de foto
+    // Estados para la foto y la carga de ubicación
     var showPhotoOptions by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var isLocationLoading by remember { mutableStateOf(false) } // <-- NUEVO ESTADO DE CARGA
 
     val context = LocalContext.current
 
-    // Launcher para la Galería
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imageUri = uri }
 
-    // Launcher para la Cámara
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -72,7 +71,7 @@ fun ReportScreen(
         }
     }
 
-    // Launcher de Permisos de Ubicación con Geocoder
+    // --- LAUNCHER DE PERMISOS DE UBICACIÓN ACTUALIZADO CON ESTADO DE CARGA ---
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -80,6 +79,7 @@ fun ReportScreen(
         val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
         if (fineLocationGranted || coarseLocationGranted) {
+            isLocationLoading = true // <-- PRENDEMOS EL "SCROLL" DE CARGA
             obtenerUbicacionActual(context) { lat, lng ->
                 try {
                     val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
@@ -92,6 +92,8 @@ fun ReportScreen(
                     }
                 } catch (e: Exception) {
                     locationText = "Coordenadas: $lat, $lng"
+                } finally {
+                    isLocationLoading = false // <-- APAGAMOS LA CARGA AL TERMINAR
                 }
             }
         } else {
@@ -102,7 +104,6 @@ fun ReportScreen(
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
 
-    // --- DIÁLOGO DE SELECCIÓN (CÁMARA O GALERÍA) ---
     if (showPhotoOptions) {
         AlertDialog(
             onDismissRequest = { showPhotoOptions = false },
@@ -212,14 +213,13 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- SECTOR FOTO ACTUALIZADO ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFF5F5F5))
-                .clickable { showPhotoOptions = true } // <-- Ahora abre el diálogo
+                .clickable { showPhotoOptions = true }
                 .drawDashedBorder(orangePaw, 20.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -288,12 +288,23 @@ fun ReportScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // --- INPUT DE UBICACIÓN CON CIRCULAR PROGRESS INTEGRADO ---
             OutlinedTextField(
                 value = locationText,
                 onValueChange = { locationText = it },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("¿Dónde fue visto?") },
                 leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray) },
+                trailingIcon = {
+                    // Si está cargando, muestra el circulito de progreso adentro del input
+                    if (isLocationLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = orangePaw
+                        )
+                    }
+                },
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = orangePaw,
@@ -305,12 +316,15 @@ fun ReportScreen(
 
             IconButton(
                 onClick = {
-                    permissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    // Si ya está cargando, evitamos que vuelva a gatillar el proceso
+                    if (!isLocationLoading) {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
                         )
-                    )
+                    }
                 },
                 modifier = Modifier
                     .size(56.dp)
@@ -370,14 +384,13 @@ fun ReportScreen(
     }
 }
 
-// --- FUNCIÓN PARA CREAR URI TEMPORAL PARA LA CÁMARA ---
 fun crearUriTemporal(context: Context): Uri {
     val directory = File(context.cacheDir, "camera_images")
     if (!directory.exists()) directory.mkdirs()
     val file = File.createTempFile("iampaw_snap_", ".jpg", directory)
     return FileProvider.getUriForFile(
         context,
-        "${context.packageName}.fileprovider", // Tiene que coincidir exactamente con el Manifest
+        "${context.packageName}.fileprovider",
         file
     )
 }
