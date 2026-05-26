@@ -1,5 +1,8 @@
 package com.example.iampaw.screens
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,14 +47,30 @@ fun ReportScreen(
     var expanded by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Nuevos estados para el formulario
-    var isLost by remember { mutableStateOf(true) } // true = Perdido, false = Encontrado
+    var isLost by remember { mutableStateOf(true) }
     var locationText by remember { mutableStateOf("") }
 
-    // Launcher para Galería
+    val context = LocalContext.current
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imageUri = uri }
+
+    // --- LAUNCHER DE PERMISOS DE UBICACIÓN ---
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        if (fineLocationGranted || coarseLocationGranted) {
+            obtenerUbicacionActual(context) { lat, lng ->
+                locationText = "$lat, $lng"
+            }
+        } else {
+            locationText = "Permiso denegado"
+        }
+    }
 
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
@@ -56,18 +79,17 @@ fun ReportScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(bgColor)
-            .statusBarsPadding() // Respeta la barra de estado del celular
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // --- HEADER MARCA IAMPAW ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
                 onClick = { navController.popBackStack() },
-                modifier = Modifier.offset(x = (-12).dp) // Compensa el padding interno del botón
+                modifier = Modifier.offset(x = (-12).dp)
             ) {
                 Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver", tint = Color.Black)
             }
@@ -89,7 +111,6 @@ fun ReportScreen(
             modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
         )
 
-        // --- SELECTOR: PERDIDO O ENCONTRADO ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,7 +120,6 @@ fun ReportScreen(
                 .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Botón Perdido
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -116,7 +136,6 @@ fun ReportScreen(
                     fontSize = 14.sp
                 )
             }
-            // Botón Encontrado
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -137,7 +156,6 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- SECTOR FOTO (Cuadro punteado) ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,7 +185,6 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- BUSCADOR DE RAZA (Searchable Dropdown) ---
         Text("Raza detectada", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -209,7 +226,6 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- UBICACIÓN + GPS ---
         Text("Ubicación", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -229,9 +245,17 @@ fun ReportScreen(
                 )
             )
             Spacer(modifier = Modifier.width(12.dp))
-            // Botón GPS
+
+            // --- BOTÓN GPS ACTUALIZADO ---
             IconButton(
-                onClick = { /* Lógica para obtener lat/long del dispositivo */ },
+                onClick = {
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                },
                 modifier = Modifier
                     .size(56.dp)
                     .background(Color(0xFFF5E6D3), RoundedCornerShape(16.dp))
@@ -242,7 +266,6 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- COLOR Y TAMAÑO ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -265,7 +288,6 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- DETALLES ---
         OutlinedTextField(
             value = "", onValueChange = {},
             modifier = Modifier.fillMaxWidth().height(120.dp),
@@ -277,7 +299,6 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- BOTÓN PUBLICAR ---
         Button(
             onClick = { /* Lógica de Firestore */ },
             modifier = Modifier.fillMaxWidth().height(60.dp),
@@ -289,11 +310,29 @@ fun ReportScreen(
             Icon(Icons.Outlined.Send, contentDescription = null, modifier = Modifier.size(20.dp))
         }
 
-        Spacer(modifier = Modifier.height(40.dp)) // Padding final para que respire al scrollear
+        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
-// Extensión para el borde punteado
+// --- FUNCIÓN DE LOCALIZACIÓN ---
+@SuppressLint("MissingPermission")
+fun obtenerUbicacionActual(context: Context, onLocationReceived: (Double, Double) -> Unit) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+    fusedLocationClient.getCurrentLocation(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        CancellationTokenSource().token
+    ).addOnSuccessListener { location ->
+        if (location != null) {
+            onLocationReceived(location.latitude, location.longitude)
+        } else {
+            onLocationReceived(0.0, 0.0)
+        }
+    }.addOnFailureListener {
+        onLocationReceived(0.0, 0.0)
+    }
+}
+
 fun Modifier.drawDashedBorder(color: Color, radius: androidx.compose.ui.unit.Dp) = this.drawWithContent {
     drawContent()
     drawRoundRect(

@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.glide.compose)
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.google.android.gms:play-services-location:21.2.0")
 
 
 
