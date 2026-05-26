@@ -370,7 +370,9 @@ fun ReportScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { /* Lógica de Firestore */ },
+            onClick = {
+                navController.navigate("match_screen")
+            },
             modifier = Modifier.fillMaxWidth().height(60.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = orangePaw)

@@ -7,12 +7,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.iampaw.screens.FeedScreen
-// 1. Android Studio te va a pedir importar tu pantalla (suele agregarse sola)
 import com.example.iampaw.screens.SplashScreen
 import com.example.iampaw.screens.LoginScreen
 import com.example.iampaw.screens.ReportScreen
 import com.example.iampaw.screens.ProfileScreen
-import com.google.firebase.auth.FirebaseAuth // Import clave para leer la sesión
+import com.google.firebase.auth.FirebaseAuth
+import com.example.iampaw.screens.MatchScreen
 
 
 @Composable
@@ -65,6 +65,10 @@ fun NavigationStack(navController: NavHostController) {
         // CU-06: Perfil del Usuario
         composable(route = Screen.Profile.route) {
             ProfileScreen(navController = navController)
+        }
+        // Pantalla de Match de Gemini (Simulación IA)
+        composable(route = "match_screen") {
+            MatchScreen(navController = navController)
         }
     }
 }
