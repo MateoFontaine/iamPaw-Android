@@ -29,12 +29,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,13 +52,27 @@ fun ReportScreen(
     var isLost by remember { mutableStateOf(true) }
     var locationText by remember { mutableStateOf("") }
 
+    // Estados nuevos para el diálogo de selección de foto
+    var showPhotoOptions by remember { mutableStateOf(false) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
     val context = LocalContext.current
 
+    // Launcher para la Galería
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imageUri = uri }
 
-    // --- LAUNCHER DE PERMISOS DE UBICACIÓN ---
+    // Launcher para la Cámara
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempCameraUri != null) {
+            imageUri = tempCameraUri
+        }
+    }
+
+    // Launcher de Permisos de Ubicación con Geocoder
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -65,7 +81,18 @@ fun ReportScreen(
 
         if (fineLocationGranted || coarseLocationGranted) {
             obtenerUbicacionActual(context) { lat, lng ->
-                locationText = "$lat, $lng"
+                try {
+                    val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                    val direcciones = geocoder.getFromLocation(lat, lng, 1)
+
+                    if (!direcciones.isNullOrEmpty()) {
+                        locationText = direcciones[0].getAddressLine(0) ?: "Dirección desconocida"
+                    } else {
+                        locationText = "Lat: $lat, Lng: $lng"
+                    }
+                } catch (e: Exception) {
+                    locationText = "Coordenadas: $lat, $lng"
+                }
             }
         } else {
             locationText = "Permiso denegado"
@@ -74,6 +101,35 @@ fun ReportScreen(
 
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
+
+    // --- DIÁLOGO DE SELECCIÓN (CÁMARA O GALERÍA) ---
+    if (showPhotoOptions) {
+        AlertDialog(
+            onDismissRequest = { showPhotoOptions = false },
+            title = { Text("Seleccionar foto", fontWeight = FontWeight.Bold) },
+            text = { Text("Elegí de dónde querés obtener la imagen de la mascota.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val uri = crearUriTemporal(context)
+                    tempCameraUri = uri
+                    cameraLauncher.launch(uri)
+                    showPhotoOptions = false
+                }) {
+                    Text("Cámara", color = orangePaw, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    galleryLauncher.launch("image/*")
+                    showPhotoOptions = false
+                }) {
+                    Text("Galería", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -156,13 +212,14 @@ fun ReportScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // --- SECTOR FOTO ACTUALIZADO ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFF5F5F5))
-                .clickable { galleryLauncher.launch("image/*") }
+                .clickable { showPhotoOptions = true } // <-- Ahora abre el diálogo
                 .drawDashedBorder(orangePaw, 20.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -171,7 +228,7 @@ fun ReportScreen(
                     Icon(Icons.Outlined.AddAPhoto, contentDescription = null, modifier = Modifier.size(40.dp), tint = Color.Gray)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Toca para subir una foto", fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
-                    Text("Soporta JPG, PNG", fontSize = 12.sp, color = Color.Gray)
+                    Text("Soporta Cámara, JPG, PNG", fontSize = 12.sp, color = Color.Gray)
                 }
             } else {
                 AsyncImage(
@@ -246,7 +303,6 @@ fun ReportScreen(
             )
             Spacer(modifier = Modifier.width(12.dp))
 
-            // --- BOTÓN GPS ACTUALIZADO ---
             IconButton(
                 onClick = {
                     permissionLauncher.launch(
@@ -314,7 +370,18 @@ fun ReportScreen(
     }
 }
 
-// --- FUNCIÓN DE LOCALIZACIÓN ---
+// --- FUNCIÓN PARA CREAR URI TEMPORAL PARA LA CÁMARA ---
+fun crearUriTemporal(context: Context): Uri {
+    val directory = File(context.cacheDir, "camera_images")
+    if (!directory.exists()) directory.mkdirs()
+    val file = File.createTempFile("iampaw_snap_", ".jpg", directory)
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider", // Tiene que coincidir exactamente con el Manifest
+        file
+    )
+}
+
 @SuppressLint("MissingPermission")
 fun obtenerUbicacionActual(context: Context, onLocationReceived: (Double, Double) -> Unit) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
