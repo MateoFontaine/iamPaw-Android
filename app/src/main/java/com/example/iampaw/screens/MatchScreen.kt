@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.iampaw.components.Screen
 import kotlinx.coroutines.delay
 
 @Composable
@@ -126,7 +127,7 @@ fun ScanningAnimation(color: Color) {
 }
 
 @Composable
-fun MatchResultsList(color: Color, navController: NavController) {
+fun MatchResultsList(color: Color, navController: NavController) { // <-- Acá recibimos el navController
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -151,7 +152,8 @@ fun MatchResultsList(color: Color, navController: NavController) {
                 timeText = "Perdido hace 2 días",
                 matchPercentage = 96,
                 imageUrl = "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600",
-                color = color
+                color = color,
+                navController = navController // <-- Se lo pasamos a Bobby
             )
         }
 
@@ -164,7 +166,8 @@ fun MatchResultsList(color: Color, navController: NavController) {
                 timeText = "Visto merodeando hoy",
                 matchPercentage = 81,
                 imageUrl = "https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?auto=format&fit=crop&q=80&w=600",
-                color = color
+                color = color,
+                navController = navController // <-- Faltaba pasárselo a esta tarjeta también
             )
         }
 
@@ -172,7 +175,7 @@ fun MatchResultsList(color: Color, navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    // Simula que ningún perro es el correcto y fuerza la publicación del reporte nuevo
+                    // Volver al feed
                     navController.navigate("feed_screen") {
                         popUpTo("feed_screen") { inclusive = true }
                     }
@@ -198,18 +201,21 @@ fun MatchCard(
     timeText: String,
     matchPercentage: Int,
     imageUrl: String,
-    color: Color
+    color: Color,
+    navController: NavController // <-- La tarjeta ahora exige el navController
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .clickable { /* Simular navegación al detalle del match CU-05 */ },
+            .clickable {
+                // Navega al detalle
+                navController.navigate(Screen.Detail.route)
+            },
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // --- IMAGEN DE FONDO REAL ---
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
@@ -217,7 +223,6 @@ fun MatchCard(
                 contentScale = ContentScale.Crop
             )
 
-            // --- DEGRADADO OSCURO INFERIOR PARA QUE SE LEA EL TEXTO ---
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -229,7 +234,6 @@ fun MatchCard(
                     )
             )
 
-            // --- BADGE DE PORCENTAJE (TOP RIGHT) ---
             val badgeBgColor = if (matchPercentage > 90) Color(0xFF4CAF50) else color
             Box(
                 modifier = Modifier
@@ -256,7 +260,6 @@ fun MatchCard(
                 }
             }
 
-            // --- INFO DE LA MASCOTA (BOTTOM LEFT) ---
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)

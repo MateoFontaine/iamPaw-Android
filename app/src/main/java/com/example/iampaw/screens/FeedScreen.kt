@@ -113,9 +113,15 @@ fun FeedScreen(navController: NavController) {
                 }
             }
 
-            // LISTA DE MASCOTAS
+            // LISTA DE MASCOTAS (ACÁ SE INYECTA LA NAVEGACIÓN)
             items(dummyPosts) { post ->
-                DogImmersiveCard(post)
+                DogImmersiveCard(
+                    post = post,
+                    onClick = {
+                        // Viaja directo a la pantalla de detalle que armaste antes
+                        navController.navigate(Screen.Detail.route)
+                    }
+                )
             }
         }
 
@@ -226,10 +232,14 @@ fun FilterContent(onApply: () -> Unit) {
     }
 }
 
+// ACÁ TAMBIÉN SE INYECTA LA NAVEGACIÓN EN EL COMPONENTE
 @Composable
-fun DogImmersiveCard(post: DogPost) {
+fun DogImmersiveCard(post: DogPost, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().height(420.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(420.dp)
+            .clickable { onClick() }, // Se hace clicable toda la tarjeta
         shape = RoundedCornerShape(32.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {

@@ -13,6 +13,7 @@ import com.example.iampaw.screens.ReportScreen
 import com.example.iampaw.screens.ProfileScreen
 import com.google.firebase.auth.FirebaseAuth
 import com.example.iampaw.screens.MatchScreen
+import com.example.iampaw.screens.DetailScreen
 
 
 @Composable
@@ -59,7 +60,7 @@ fun NavigationStack(navController: NavHostController) {
 
         // CU-05: Detalle del Reporte
         composable(route = Screen.Detail.route) {
-            // DetailScreen(navController)
+            DetailScreen(navController = navController)
         }
 
         // CU-06: Perfil del Usuario
