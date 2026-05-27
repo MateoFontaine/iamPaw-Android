@@ -1,4 +1,4 @@
-package com.example.iampaw.screens
+package com.example.iampaw.components.detail
 
 import android.content.Intent
 import android.net.Uri
@@ -15,9 +15,10 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -25,21 +26,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 
 @Composable
-fun DetailScreen(navController: NavController) {
+fun DetailScreen(
+    navController: NavController,
+    viewModel: DetailViewModel = viewModel() // Inyectamos el ViewModel
+) {
     val context = LocalContext.current
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
 
-
-    val name = "Bobby"
-    val breed = "Golden Retriever"
-    val location = "Pinamar Centro"
-    val imageUrl = "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600"
-    val description = "Se perdió cerca de la plaza central. Es súper manso pero está asustado. Tiene un collar de cuero marrón sin chapita."
+    // Observamos el estado reactivo del ViewModel
+    val state by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -53,12 +54,11 @@ fun DetailScreen(navController: NavController) {
                 .height(380.dp)
         ) {
             AsyncImage(
-                model = imageUrl,
+                model = state.imageUrl,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-
 
             Box(
                 modifier = Modifier
@@ -70,7 +70,6 @@ fun DetailScreen(navController: NavController) {
                         )
                     )
             )
-
 
             IconButton(
                 onClick = { navController.popBackStack() },
@@ -91,13 +90,13 @@ fun DetailScreen(navController: NavController) {
         ) {
             // Badge de Estado
             Surface(
-                color = Color(0xFFFFEBEE),
+                color = if (state.isLost) Color(0xFFFFEBEE) else Color(0xFFE8F5E9),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Text(
-                    text = "PERDIDO",
-                    color = Color(0xFFD32F2F),
+                    text = if (state.isLost) "PERDIDO" else "ENCONTRADO",
+                    color = if (state.isLost) Color(0xFFD32F2F) else Color(0xFF2E7D32),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -105,8 +104,8 @@ fun DetailScreen(navController: NavController) {
             }
 
             // Nombre y Raza
-            Text(text = name, fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.Black)
-            Text(text = breed, fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            Text(text = state.name, fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.Black)
+            Text(text = state.breed, fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -114,7 +113,7 @@ fun DetailScreen(navController: NavController) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = orangePaw, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(text = location, color = Color.DarkGray, fontSize = 14.sp)
+                Text(text = state.location, color = Color.DarkGray, fontSize = 14.sp)
             }
 
             Divider(modifier = Modifier.padding(vertical = 20.dp), color = Color(0xFFEEEEEE))
@@ -134,7 +133,7 @@ fun DetailScreen(navController: NavController) {
                     Column {
                         Text("Análisis de Rasgos por iamPaw AI", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFE65100))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("• Tamaño: Grande\n• Color: Dorado / Crema\n• Particularidades: Collar de cuero", fontSize = 13.sp, color = Color.DarkGray, lineHeight = 18.sp)
+                        Text(state.aiAnalysis, fontSize = 13.sp, color = Color.DarkGray, lineHeight = 18.sp)
                     }
                 }
             }
@@ -144,7 +143,7 @@ fun DetailScreen(navController: NavController) {
             // Descripción del usuario
             Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
             Text(
-                text = description,
+                text = state.description,
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 6.dp),
@@ -157,8 +156,7 @@ fun DetailScreen(navController: NavController) {
             // Botón Google Maps
             OutlinedButton(
                 onClick = {
-                    // Intent Implícito para abrir Google Maps mapeando la zona
-                    val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$location, Pinamar, Argentina"))
+                    val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${state.location}, Pinamar, Argentina"))
                     context.startActivity(mapIntent)
                 },
                 modifier = Modifier
@@ -177,7 +175,7 @@ fun DetailScreen(navController: NavController) {
             // Botón Contactar por WhatsApp
             Button(
                 onClick = {
-                    val whatsappIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=5492254000000&text=Hola! Vengo de iamPaw, creo que vi a tu mascota Bobby."))
+                    val whatsappIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=5492254000000&text=Hola! Vengo de iamPaw, creo que vi a tu mascota ${state.name}."))
                     context.startActivity(whatsappIntent)
                 },
                 modifier = Modifier

@@ -1,4 +1,4 @@
-package com.example.iampaw.screens
+package com.example.iampaw.components.feed
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -25,31 +25,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
-
-// Modelo de datos
-data class DogPost(
-    val id: String,
-    val name: String,
-    val breed: String,
-    val location: String,
-    val time: String,
-    val imageUrl: String,
-    val status: String
-)
+import com.example.iampaw.components.report.ReportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     navController: NavController,
-    reportViewModel: ReportViewModel = viewModel() // Traemos el ViewModel para tener las razas
+    feedViewModel: FeedViewModel = viewModel(),
+    reportViewModel: ReportViewModel = viewModel()
 ) {
-    val dummyPosts = listOf(
-        DogPost("1", "Rocco", "Golden Retriever", "Palermo, CABA", "Hace 2h", "https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=1000", "Perdido"),
-        DogPost("2", "Luna", "Border Collie", "Córdoba, Arg", "Hace 5h", "https://images.unsplash.com/photo-1507146426996-ef05306b995a?q=80&w=1000", "Encontrado"),
-        DogPost("3", "Milo", "Pug", "Rosario, SF", "Ayer", "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1000", "Perdido")
-    )
+    // Escuchamos el estado que viene del ViewModel
+    val state by feedViewModel.uiState.collectAsState()
 
-    // Estados para la UI
+    // Estados visuales locales
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
@@ -85,7 +73,6 @@ fun FeedScreen(
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Black
                         )
-                        // Campanita inactiva para la demo
                         IconButton(onClick = { /* TODO: Notificaciones */ }) {
                             Icon(Icons.Outlined.Notifications, contentDescription = null)
                         }
@@ -99,7 +86,6 @@ fun FeedScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Buscador Autocompletable (Ocupa el espacio principal)
                         ExposedDropdownMenuBox(
                             expanded = expandedBreedSearch,
                             onExpandedChange = { expandedBreedSearch = !expandedBreedSearch },
@@ -133,7 +119,6 @@ fun FeedScreen(
                                 singleLine = true
                             )
 
-                            // Menú desplegable con las razas filtradas
                             val filteredOptions = breeds.filter { it.name.contains(searchBreedText, ignoreCase = true) }
                             if (filteredOptions.isNotEmpty() && searchBreedText.isNotEmpty()) {
                                 ExposedDropdownMenu(
@@ -154,12 +139,11 @@ fun FeedScreen(
                             }
                         }
 
-                        // Botón de Filtros Avanzados (El de las rayitas)
                         Surface(
                             onClick = { showFilters = true },
                             modifier = Modifier.size(56.dp),
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFFFF3E0), // Fondo naranjita claro
+                            color = Color(0xFFFFF3E0),
                             border = BorderStroke(1.dp, Color(0xFFFFE0B2))
                         ) {
                             Icon(
@@ -177,7 +161,7 @@ fun FeedScreen(
             }
 
             // LISTA DE MASCOTAS
-            items(dummyPosts) { post ->
+            items(state.posts) { post ->
                 DogImmersiveCard(
                     post = post,
                     onClick = { navController.navigate(Screen.Detail.route) }
@@ -235,7 +219,6 @@ fun FeedScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterContent(onApply: () -> Unit) {
-    // Estados para los chips (solo visuales para la demo)
     var selectedStatus by remember { mutableStateOf("Todos") }
 
     Column(
