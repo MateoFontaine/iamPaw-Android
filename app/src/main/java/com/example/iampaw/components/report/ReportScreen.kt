@@ -1,8 +1,9 @@
-package com.example.iampaw.screens
+package com.example.iampaw.components.report
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Geocoder
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -37,61 +39,35 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import java.io.File
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(
     navController: NavController,
-    viewModel: ReportViewModel = viewModel()
+    viewModel: ReportViewModel = viewModel() // Inyectamos el ViewModel
 ) {
+    val context = LocalContext.current
+
+    // Observamos los estados
+    val state by viewModel.uiState.collectAsState()
     val breeds by viewModel.breeds.collectAsState()
 
-    // --- ESTADOS DEL FORMULARIO ---
-    var breedText by remember { mutableStateOf("") }
-    var colorText by remember { mutableStateOf("") }
-    var sizeText by remember { mutableStateOf("") }
-    var detailsText by remember { mutableStateOf("") }
-
+    // Estados puramente visuales (se quedan en la UI)
     var expanded by remember { mutableStateOf(false) }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var isLost by remember { mutableStateOf(true) }
-    var locationText by remember { mutableStateOf("") }
-
-    // Estados para la foto y la carga de ubicación
     var showPhotoOptions by remember { mutableStateOf(false) }
-    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
-    var isLocationLoading by remember { mutableStateOf(false) }
-
-    // --- EFECTO MAGO DE OZ ---
-    LaunchedEffect(imageUri) {
-        if (imageUri != null) {
-            // 1. Feedback visual de análisis en campos clave
-            val loadingPlaceholder = "iamPaw AI analizando..."
-            breedText = loadingPlaceholder
-            colorText = loadingPlaceholder
-            sizeText = loadingPlaceholder
-
-            // 2. Simulamos la latencia real (4 segundos)
-            kotlinx.coroutines.delay(4000)
-
-            // 3. Autocompletado de IA solo para datos duros
-            breedText = "Golden Retriever"
-            colorText = "Dorado / Crema"
-            sizeText = "Grande (aprox 30kg)"
-        }
-    }
-
-    val context = LocalContext.current
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri -> imageUri = uri }
+    ) { uri ->
+        if(uri != null) viewModel.onImageSelected(uri)
+    }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success && tempCameraUri != null) {
-            imageUri = tempCameraUri
+        if (success && state.tempCameraUri != null) {
+            viewModel.onImageSelected(state.tempCameraUri)
         }
     }
 
@@ -102,25 +78,25 @@ fun ReportScreen(
         val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
         if (fineLocationGranted || coarseLocationGranted) {
-            isLocationLoading = true
+            viewModel.setLocationLoading(true)
             obtenerUbicacionActual(context) { lat, lng ->
                 try {
-                    val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                    val geocoder = Geocoder(context, Locale.getDefault())
                     val direcciones = geocoder.getFromLocation(lat, lng, 1)
 
                     if (!direcciones.isNullOrEmpty()) {
-                        locationText = direcciones[0].getAddressLine(0) ?: "Dirección desconocida"
+                        viewModel.updateLocationText(direcciones[0].getAddressLine(0) ?: "Dirección desconocida")
                     } else {
-                        locationText = "Lat: $lat, Lng: $lng"
+                        viewModel.updateLocationText("Lat: $lat, Lng: $lng")
                     }
                 } catch (e: Exception) {
-                    locationText = "Coordenadas: $lat, $lng"
+                    viewModel.updateLocationText("Coordenadas: $lat, $lng")
                 } finally {
-                    isLocationLoading = false
+                    viewModel.setLocationLoading(false)
                 }
             }
         } else {
-            locationText = "Permiso denegado"
+            viewModel.updateLocationText("Permiso denegado")
         }
     }
 
@@ -135,7 +111,7 @@ fun ReportScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val uri = crearUriTemporal(context)
-                    tempCameraUri = uri
+                    viewModel.setTempCameraUri(uri)
                     cameraLauncher.launch(uri)
                     showPhotoOptions = false
                 }) {
@@ -205,14 +181,14 @@ fun ReportScreen(
                     .weight(1f)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(if (isLost) Color.White else Color.Transparent)
-                    .clickable { isLost = true },
+                    .background(if (state.isLost) Color.White else Color.Transparent)
+                    .clickable { viewModel.setLostStatus(true) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Busco a mi mascota",
                     fontWeight = FontWeight.Bold,
-                    color = if (isLost) Color.Black else Color.Gray,
+                    color = if (state.isLost) Color.Black else Color.Gray,
                     fontSize = 14.sp
                 )
             }
@@ -221,14 +197,14 @@ fun ReportScreen(
                     .weight(1f)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(if (!isLost) Color.White else Color.Transparent)
-                    .clickable { isLost = false },
+                    .background(if (!state.isLost) Color.White else Color.Transparent)
+                    .clickable { viewModel.setLostStatus(false) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Encontré una mascota",
                     fontWeight = FontWeight.Bold,
-                    color = if (!isLost) Color.Black else Color.Gray,
+                    color = if (!state.isLost) Color.Black else Color.Gray,
                     fontSize = 14.sp
                 )
             }
@@ -246,7 +222,7 @@ fun ReportScreen(
                 .drawDashedBorder(orangePaw, 20.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (imageUri == null) {
+            if (state.imageUri == null) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Outlined.AddAPhoto, contentDescription = null, modifier = Modifier.size(40.dp), tint = Color.Gray)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -255,7 +231,7 @@ fun ReportScreen(
                 }
             } else {
                 AsyncImage(
-                    model = imageUri,
+                    model = state.imageUri,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -271,8 +247,8 @@ fun ReportScreen(
             onExpandedChange = { expanded = !expanded }
         ) {
             OutlinedTextField(
-                value = breedText,
-                onValueChange = { breedText = it; expanded = true },
+                value = state.breedText,
+                onValueChange = { viewModel.updateBreedText(it); expanded = true },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
                 placeholder = { Text("Ej: Golden Retriever") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -284,7 +260,7 @@ fun ReportScreen(
                 )
             )
 
-            val filteredOptions = breeds.filter { it.name.contains(breedText, ignoreCase = true) }
+            val filteredOptions = breeds.filter { it.name.contains(state.breedText, ignoreCase = true) }
             if (filteredOptions.isNotEmpty()) {
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -295,7 +271,7 @@ fun ReportScreen(
                         DropdownMenuItem(
                             text = { Text(breed.name) },
                             onClick = {
-                                breedText = breed.name
+                                viewModel.updateBreedText(breed.name)
                                 expanded = false
                             }
                         )
@@ -312,13 +288,13 @@ fun ReportScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = locationText,
-                onValueChange = { locationText = it },
+                value = state.locationText,
+                onValueChange = { viewModel.updateLocationText(it) },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("¿Dónde fue visto?") },
                 leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray) },
                 trailingIcon = {
-                    if (isLocationLoading) {
+                    if (state.isLocationLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
@@ -337,7 +313,7 @@ fun ReportScreen(
 
             IconButton(
                 onClick = {
-                    if (!isLocationLoading) {
+                    if (!state.isLocationLoading) {
                         permissionLauncher.launch(
                             arrayOf(
                                 Manifest.permission.ACCESS_FINE_LOCATION,
@@ -361,8 +337,8 @@ fun ReportScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
-                value = colorText,
-                onValueChange = { colorText = it },
+                value = state.colorText,
+                onValueChange = { viewModel.updateColorText(it) },
                 modifier = Modifier.weight(1f),
                 label = { Text("Color principal") },
                 shape = RoundedCornerShape(16.dp),
@@ -370,8 +346,8 @@ fun ReportScreen(
                 singleLine = true
             )
             OutlinedTextField(
-                value = sizeText,
-                onValueChange = { sizeText = it },
+                value = state.sizeText,
+                onValueChange = { viewModel.updateSizeText(it) },
                 modifier = Modifier.weight(1f),
                 label = { Text("Tamaño aprox.") },
                 shape = RoundedCornerShape(16.dp),
@@ -383,8 +359,8 @@ fun ReportScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = detailsText,
-            onValueChange = { detailsText = it },
+            value = state.detailsText,
+            onValueChange = { viewModel.updateDetailsText(it) },
             modifier = Modifier.fillMaxWidth().height(120.dp),
             label = { Text("Detalles adicionales") },
             placeholder = { Text("Llevaba un collar azul, está asustado...") },
@@ -403,7 +379,7 @@ fun ReportScreen(
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = orangePaw)
         ) {
-            Text(if (isLost) "Publicar Búsqueda" else "Reportar Mascota", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(if (state.isLost) "Publicar Búsqueda" else "Reportar Mascota", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.width(8.dp))
             Icon(Icons.Outlined.Send, contentDescription = null, modifier = Modifier.size(20.dp))
         }
@@ -412,6 +388,7 @@ fun ReportScreen(
     }
 }
 
+// --- FUNCIONES AUXILIARES INTACTAS ---
 fun crearUriTemporal(context: Context): Uri {
     val directory = File(context.cacheDir, "camera_images")
     if (!directory.exists()) directory.mkdirs()
@@ -441,7 +418,7 @@ fun obtenerUbicacionActual(context: Context, onLocationReceived: (Double, Double
     }
 }
 
-fun Modifier.drawDashedBorder(color: Color, radius: androidx.compose.ui.unit.Dp) = this.drawWithContent {
+fun Modifier.drawDashedBorder(color: Color, radius: Dp) = this.drawWithContent {
     drawContent()
     drawRoundRect(
         color = color,

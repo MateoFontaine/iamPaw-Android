@@ -1,4 +1,4 @@
-package com.example.iampaw.screens
+package com.example.iampaw.components.splash
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

@@ -1,10 +1,11 @@
-package com.example.iampaw.screens
+package com.example.iampaw.components.match
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,19 +25,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
-import kotlinx.coroutines.delay
 
 @Composable
-fun MatchScreen(navController: NavController) {
-    var isScanning by remember { mutableStateOf(true) }
-
-    LaunchedEffect(Unit) {
-        delay(3500)
-        isScanning = false
-    }
+fun MatchScreen(
+    navController: NavController,
+    viewModel: MatchViewModel = viewModel() // Inyectamos el ViewModel
+) {
+    // Observamos el estado reactivo del ViewModel
+    val state by viewModel.uiState.collectAsState()
 
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
@@ -59,7 +59,7 @@ fun MatchScreen(navController: NavController) {
                 Icon(Icons.Outlined.Close, contentDescription = "Cancelar", tint = Color.Black)
             }
             Text(
-                text = if (isScanning) "Analizando reporte..." else "Coincidencias Detectadas",
+                text = if (state.isScanning) "Analizando reporte..." else "Coincidencias Detectadas",
                 fontWeight = FontWeight.Black,
                 fontSize = 20.sp,
                 color = Color.Black,
@@ -73,10 +73,10 @@ fun MatchScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            if (isScanning) {
+            if (state.isScanning) {
                 ScanningAnimation(orangePaw)
             } else {
-                MatchResultsList(orangePaw, navController)
+                MatchResultsList(orangePaw, navController, state.matches) // Pasamos la lista del State
             }
         }
     }
@@ -127,7 +127,7 @@ fun ScanningAnimation(color: Color) {
 }
 
 @Composable
-fun MatchResultsList(color: Color, navController: NavController) {
+fun MatchResultsList(color: Color, navController: NavController, matches: List<MatchedDog>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -143,29 +143,15 @@ fun MatchResultsList(color: Color, navController: NavController) {
             )
         }
 
-        // Card 1 - Match Muy Alto (Golden Retriever)
-        item {
+        // Iteramos sobre la lista dinámica que viene del ViewModel
+        items(matches) { matchedDog ->
             MatchCard(
-                name = "Bobby",
-                breed = "Golden Retriever",
-                location = "Pinamar Centro",
-                timeText = "Perdido hace 2 días",
-                matchPercentage = 96,
-                imageUrl = "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600",
-                color = color,
-                navController = navController
-            )
-        }
-
-        // Card 2 - Match Medio (Labrador / Mestizo)
-        item {
-            MatchCard(
-                name = "Sin nombre",
-                breed = "Mestizo / Labrador",
-                location = "Cariló",
-                timeText = "Visto merodeando hoy",
-                matchPercentage = 81,
-                imageUrl = "https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?auto=format&fit=crop&q=80&w=600",
+                name = matchedDog.name,
+                breed = matchedDog.breed,
+                location = matchedDog.location,
+                timeText = matchedDog.timeText,
+                matchPercentage = matchedDog.matchPercentage,
+                imageUrl = matchedDog.imageUrl,
                 color = color,
                 navController = navController
             )
@@ -175,7 +161,6 @@ fun MatchResultsList(color: Color, navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    // Volver al feed
                     navController.navigate("feed_screen") {
                         popUpTo("feed_screen") { inclusive = true }
                     }
@@ -209,7 +194,6 @@ fun MatchCard(
             .fillMaxWidth()
             .height(220.dp)
             .clickable {
-
                 navController.navigate(Screen.Detail.route)
             },
         shape = RoundedCornerShape(24.dp),
