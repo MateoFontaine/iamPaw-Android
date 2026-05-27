@@ -6,14 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.iampaw.screens.FeedScreen
-import com.example.iampaw.screens.SplashScreen
-import com.example.iampaw.screens.LoginScreen
-import com.example.iampaw.screens.ReportScreen
-import com.example.iampaw.screens.ProfileScreen
+import com.example.iampaw.components.feed.FeedScreen
+import com.example.iampaw.components.splash.SplashScreen
+import com.example.iampaw.components.login.LoginScreen
+import com.example.iampaw.components.report.ReportScreen
+import com.example.iampaw.components.profile.ProfileScreen
 import com.google.firebase.auth.FirebaseAuth
-import com.example.iampaw.screens.MatchScreen
-import com.example.iampaw.screens.DetailScreen
+import com.example.iampaw.components.match.MatchScreen
+import com.example.iampaw.components.detail.DetailScreen
 
 
 @Composable
