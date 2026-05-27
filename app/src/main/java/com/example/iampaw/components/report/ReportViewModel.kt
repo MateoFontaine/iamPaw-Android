@@ -1,11 +1,10 @@
 package com.example.iampaw.components.report
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.iampaw.data.DogBreed // Asegurate de que este import coincida con el tuyo
-import com.example.iampaw.data.RetrofitInstance
+import com.example.iampaw.data.DogBreed
+import com.example.iampaw.data.PawRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +13,10 @@ import kotlinx.coroutines.launch
 
 class ReportViewModel : ViewModel() {
 
-    // --- ESTADO DE LA API DE RAZAS (Lo que ya tenías) ---
+    // 1. Instanciamos el repositorio (usará los defaults: Mock y API)
+    private val repository = PawRepository()
+
+    // --- ESTADO DE LA API DE RAZAS ---
     private val _breeds = MutableStateFlow<List<DogBreed>>(emptyList())
     val breeds: StateFlow<List<DogBreed>> = _breeds.asStateFlow()
 
@@ -28,12 +30,9 @@ class ReportViewModel : ViewModel() {
 
     private fun fetchBreeds() {
         viewModelScope.launch {
-            try {
-                val response = RetrofitInstance.api.getBreeds()
-                _breeds.value = response
-            } catch (e: Exception) {
-                Log.e("API_ERROR", "Falló la llamada a The Dog API", e)
-            }
+            // 2. Consumimos los datos a través del repositorio
+            val response = repository.getBreeds()
+            _breeds.value = response
         }
     }
 

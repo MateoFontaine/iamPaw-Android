@@ -8,4 +8,6 @@ interface IPawDataSource {
     fun getFeedDogs(): List<DogPost>
     fun getDogDetail(id: String): DetailState
     fun getMatchedDogs(): List<MatchedDog>
+
+    suspend fun getBreeds(): List<DogBreed>
 }
