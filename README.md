@@ -51,4 +51,3 @@ Para correr este proyecto en tu entorno local:
 1. Clonar el repositorio:
    ```bash
    git clone [https://github.com/MateoFontaine/iamPaw-Android.git](https://github.com/MateoFontaine/iamPaw-Android.git)
-   
