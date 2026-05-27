@@ -45,17 +45,41 @@ fun ReportScreen(
     viewModel: ReportViewModel = viewModel()
 ) {
     val breeds by viewModel.breeds.collectAsState()
+
+    // --- ESTADOS DEL FORMULARIO ---
     var breedText by remember { mutableStateOf("") }
+    var colorText by remember { mutableStateOf("") }
+    var sizeText by remember { mutableStateOf("") }
+    var detailsText by remember { mutableStateOf("") }
+
     var expanded by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-
     var isLost by remember { mutableStateOf(true) }
     var locationText by remember { mutableStateOf("") }
 
     // Estados para la foto y la carga de ubicación
     var showPhotoOptions by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
-    var isLocationLoading by remember { mutableStateOf(false) } // <-- NUEVO ESTADO DE CARGA
+    var isLocationLoading by remember { mutableStateOf(false) }
+
+    // --- EFECTO MAGO DE OZ ---
+    LaunchedEffect(imageUri) {
+        if (imageUri != null) {
+            // 1. Feedback visual de análisis en campos clave
+            val loadingPlaceholder = "iamPaw AI analizando..."
+            breedText = loadingPlaceholder
+            colorText = loadingPlaceholder
+            sizeText = loadingPlaceholder
+
+            // 2. Simulamos la latencia real (4 segundos)
+            kotlinx.coroutines.delay(4000)
+
+            // 3. Autocompletado de IA solo para datos duros
+            breedText = "Golden Retriever"
+            colorText = "Dorado / Crema"
+            sizeText = "Grande (aprox 30kg)"
+        }
+    }
 
     val context = LocalContext.current
 
@@ -71,7 +95,6 @@ fun ReportScreen(
         }
     }
 
-    // --- LAUNCHER DE PERMISOS DE UBICACIÓN ACTUALIZADO CON ESTADO DE CARGA ---
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -79,7 +102,7 @@ fun ReportScreen(
         val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
 
         if (fineLocationGranted || coarseLocationGranted) {
-            isLocationLoading = true // <-- PRENDEMOS EL "SCROLL" DE CARGA
+            isLocationLoading = true
             obtenerUbicacionActual(context) { lat, lng ->
                 try {
                     val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
@@ -93,7 +116,7 @@ fun ReportScreen(
                 } catch (e: Exception) {
                     locationText = "Coordenadas: $lat, $lng"
                 } finally {
-                    isLocationLoading = false // <-- APAGAMOS LA CARGA AL TERMINAR
+                    isLocationLoading = false
                 }
             }
         } else {
@@ -288,7 +311,6 @@ fun ReportScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // --- INPUT DE UBICACIÓN CON CIRCULAR PROGRESS INTEGRADO ---
             OutlinedTextField(
                 value = locationText,
                 onValueChange = { locationText = it },
@@ -296,7 +318,6 @@ fun ReportScreen(
                 placeholder = { Text("¿Dónde fue visto?") },
                 leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray) },
                 trailingIcon = {
-                    // Si está cargando, muestra el circulito de progreso adentro del input
                     if (isLocationLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
@@ -316,7 +337,6 @@ fun ReportScreen(
 
             IconButton(
                 onClick = {
-                    // Si ya está cargando, evitamos que vuelva a gatillar el proceso
                     if (!isLocationLoading) {
                         permissionLauncher.launch(
                             arrayOf(
@@ -341,30 +361,36 @@ fun ReportScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
-                value = "", onValueChange = {},
+                value = colorText,
+                onValueChange = { colorText = it },
                 modifier = Modifier.weight(1f),
                 label = { Text("Color principal") },
                 shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White),
+                singleLine = true
             )
             OutlinedTextField(
-                value = "", onValueChange = {},
+                value = sizeText,
+                onValueChange = { sizeText = it },
                 modifier = Modifier.weight(1f),
                 label = { Text("Tamaño aprox.") },
                 shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White),
+                singleLine = true
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = "", onValueChange = {},
+            value = detailsText,
+            onValueChange = { detailsText = it },
             modifier = Modifier.fillMaxWidth().height(120.dp),
             label = { Text("Detalles adicionales") },
             placeholder = { Text("Llevaba un collar azul, está asustado...") },
             shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White),
+            maxLines = 5
         )
 
         Spacer(modifier = Modifier.height(32.dp))
