@@ -34,7 +34,7 @@ fun MatchScreen(navController: NavController) {
     var isScanning by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        delay(3500) // Simulación de procesamiento de la IA
+        delay(3500)
         isScanning = false
     }
 
@@ -127,7 +127,7 @@ fun ScanningAnimation(color: Color) {
 }
 
 @Composable
-fun MatchResultsList(color: Color, navController: NavController) { // <-- Acá recibimos el navController
+fun MatchResultsList(color: Color, navController: NavController) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -153,7 +153,7 @@ fun MatchResultsList(color: Color, navController: NavController) { // <-- Acá r
                 matchPercentage = 96,
                 imageUrl = "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600",
                 color = color,
-                navController = navController // <-- Se lo pasamos a Bobby
+                navController = navController
             )
         }
 
@@ -167,7 +167,7 @@ fun MatchResultsList(color: Color, navController: NavController) { // <-- Acá r
                 matchPercentage = 81,
                 imageUrl = "https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?auto=format&fit=crop&q=80&w=600",
                 color = color,
-                navController = navController // <-- Faltaba pasárselo a esta tarjeta también
+                navController = navController
             )
         }
 
@@ -202,14 +202,14 @@ fun MatchCard(
     matchPercentage: Int,
     imageUrl: String,
     color: Color,
-    navController: NavController // <-- La tarjeta ahora exige el navController
+    navController: NavController
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
             .clickable {
-                // Navega al detalle
+
                 navController.navigate(Screen.Detail.route)
             },
         shape = RoundedCornerShape(24.dp),
