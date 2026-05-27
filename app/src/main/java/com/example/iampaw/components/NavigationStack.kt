@@ -18,14 +18,12 @@ import com.example.iampaw.screens.DetailScreen
 
 @Composable
 fun NavigationStack(navController: NavHostController) {
-    // 1. Le preguntamos a Firebase si ya hay un usuario guardado
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // 2. Definimos cuál es la pantalla inicial según el estado del usuario
     val initialScreen = if (currentUser != null) {
-        Screen.Feed.route // Si hay sesión abierta, va directo al feed
+        Screen.Feed.route
     } else {
-        Screen.Splash.route // Si es la primera vez o cerró sesión, va al Splash
+        Screen.Splash.route
     }
 
     NavHost(
@@ -67,7 +65,7 @@ fun NavigationStack(navController: NavHostController) {
         composable(route = Screen.Profile.route) {
             ProfileScreen(navController = navController)
         }
-        // Pantalla de Match de Gemini (Simulación IA)
+        // Pantalla de Match de Gemini
         composable(route = "match_screen") {
             MatchScreen(navController = navController)
         }

@@ -18,7 +18,6 @@ class ReportViewModel : ViewModel() {
     var selectedImageUri = MutableStateFlow<android.net.Uri?>(null)
     var description = MutableStateFlow("")
 
-    // Nueva variable para atrapar el mensaje de error real
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
@@ -29,12 +28,11 @@ class ReportViewModel : ViewModel() {
     private fun fetchBreeds() {
         viewModelScope.launch {
             try {
-                _errorMessage.value = null // Limpiamos errores previos
+                _errorMessage.value = null
                 val response = RetrofitInstance.api.getBreeds()
                 _breeds.value = response
                 Log.d("API_TEST", "¡Razas cargadas! Se encontraron ${response.size} razas.")
             } catch (e: Exception) {
-                // Guardamos el error real para mostrarlo en la pantalla
                 _errorMessage.value = e.message ?: "Error desconocido al conectar con la API"
                 Log.e("API_ERROR", "Falló la llamada a The Dog API", e)
             }
