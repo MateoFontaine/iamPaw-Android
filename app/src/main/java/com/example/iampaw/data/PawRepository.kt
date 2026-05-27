@@ -4,17 +4,15 @@ import com.example.iampaw.components.detail.DetailState
 import com.example.iampaw.components.feed.DogPost
 import com.example.iampaw.components.match.MatchedDog
 
-class PawRepository(private val dataSource: IPawDataSource) {
+class PawRepository(
+    private val mockDataSource: IPawDataSource = PawMockDataSource(),
+    private val apiDataSource: IPawDataSource = PawApiDataSource()
+) {
 
-    fun getFeedDogs(): List<DogPost> {
-        return dataSource.getFeedDogs()
-    }
 
-    fun getDogDetail(id: String): DetailState {
-        return dataSource.getDogDetail(id)
-    }
+    fun getFeedDogs(): List<DogPost> = mockDataSource.getFeedDogs()
+    fun getDogDetail(id: String): DetailState = mockDataSource.getDogDetail(id)
+    fun getMatchedDogs(): List<MatchedDog> = mockDataSource.getMatchedDogs()
 
-    fun getMatchedDogs(): List<MatchedDog> {
-        return dataSource.getMatchedDogs()
-    }
+    suspend fun getBreeds(): List<DogBreed> = apiDataSource.getBreeds()
 }
