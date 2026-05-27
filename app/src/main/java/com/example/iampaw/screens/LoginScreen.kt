@@ -63,7 +63,7 @@ fun LoginScreen(navController: NavController) {
                 if (authTask.isSuccessful) {
                     Log.d("LOGIN_EXITOSO", "Usuario: ${auth.currentUser?.email}")
 
-                    // Usamos las variables exactas de tu archivo Screen.kt
+
                     navController.navigate(Screen.Feed.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -87,29 +87,29 @@ fun LoginScreen(navController: NavController) {
     )
 
     // --- NUEVO FONDO FULLSCREEN Y SUAVE ---
-    // Creamos un degradado vertical que ocupa toda la pantalla.
+
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFFFFF9F0), // Arriba: Pale Peach (casi blanco)
-            Color(0xFFFBFDFF), // Centro: Blanco puro/crema
-            Color(0xFFF0F6FF)  // Abajo: Pale Lavender Blue (casi blanco)
+            Color(0xFFFFF9F0),
+            Color(0xFFFBFDFF),
+            Color(0xFFF0F6FF)
         ),
-        // No necesitamos stop locations, la transición será súper suave.
+
     )
 
-    // Contenedor principal que ocupa toda la pantalla con el nuevo fondo
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundBrush) // Aplicamos el fondo suave aquí
+            .background(backgroundBrush)
     ) {
         // --- CONTENIDO: Centrado perfecto sobre el fondo de luces ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 40.dp),
-            verticalArrangement = Arrangement.Center, // Centrado Vertical
-            horizontalAlignment = Alignment.CenterHorizontally // Centrado Horizontal
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Logo
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -133,7 +133,7 @@ fun LoginScreen(navController: NavController) {
             Text(
                 text = "Unite a la comunidad de iamPaw y empezá a reportar para hacer del mundo un lugar mejor.",
                 fontSize = 16.sp,
-                color = Color(0xFF333333), // Gris oscuro para contraste suave
+                color = Color(0xFF333333),
                 textAlign = TextAlign.Center,
                 lineHeight = 24.sp
             )
@@ -150,7 +150,7 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)
-                    // Acá le aplicamos el delineado de colores de Google
+
                     .border(
                         width = 1.5.dp,
                         brush = googleGradientBrush,

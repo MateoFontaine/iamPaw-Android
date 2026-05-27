@@ -4,10 +4,10 @@ import java.io.FileInputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.gms.google-services") // Este es el de Firebase, está perfecto que quede
+    id("com.google.gms.google-services")
 }
 
-// Cargamos el archivo local.properties para leer las variables seguras
+
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -27,7 +27,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Inyectamos la variable DOG_API_KEY para que se genere en BuildConfig
         buildConfigField("String", "DOG_API_KEY", "\"${localProperties.getProperty("DOG_API_KEY")}\"")
     }
 
@@ -46,7 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true // Activamos la generación de la clase BuildConfig
+        buildConfig = true
     }
 }
 
@@ -67,9 +66,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
-    implementation(platform(libs.firebase.bom)) // <- El menú principal que ya tenías
-    implementation("com.google.firebase:firebase-auth") // <- Herramienta 1: Firebase Auth
-    implementation("com.google.android.gms:play-services-auth:21.1.1") // <- Herramienta 2: Login de Google
+    implementation(platform(libs.firebase.bom))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.android.gms:play-services-auth:21.1.1")
     implementation(libs.glide.compose)
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.compose.material:material-icons-extended")

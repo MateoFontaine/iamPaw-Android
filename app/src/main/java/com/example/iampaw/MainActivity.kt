@@ -16,10 +16,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             IamPawTheme {
-                // 1. Creamos al "chofer" que va a manejar los viajes
                 val navController = rememberNavController()
 
-                // 2. Encendemos el motor pasándole el chofer
                 NavigationStack(navController = navController)
             }
         }
