@@ -32,4 +32,8 @@ class PawMockDataSource : IPawDataSource {
             MatchedDog("Sin nombre", "Mestizo / Labrador", "Cariló", "Visto merodeando hoy", 81, "https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?auto=format&fit=crop&q=80&w=600")
         )
     }
+
+    override suspend fun getBreeds(): List<DogBreed> {
+        return emptyList()
+    }
 }
