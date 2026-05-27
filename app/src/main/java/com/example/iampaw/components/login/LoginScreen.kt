@@ -1,4 +1,4 @@
-package com.example.iampaw.screens
+package com.example.iampaw.components.login
 
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,26 +25,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.iampaw.R
 import com.example.iampaw.components.Screen
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: LoginViewModel = viewModel() // Inyectamos el ViewModel
+) {
     val context = LocalContext.current
-    val auth = FirebaseAuth.getInstance()
+    val state by viewModel.uiState.collectAsState()
 
     val interFamily = FontFamily(
         Font(R.font.inter_extrabold, FontWeight.ExtraBold)
     )
 
-    // --- NUEVO ESTADO PARA LA RUEDITA DE CARGA ---
-    var isLoading by remember { mutableStateOf(false) }
+    // Escuchamos si el login fue exitoso para navegar
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            navController.navigate(Screen.Feed.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
+    }
 
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestIdToken("892894302329-uuio0fu0c0keehrj4es5b0dr8nm4jdnd.apps.googleusercontent.com")
@@ -59,37 +67,25 @@ fun LoginScreen(navController: NavController) {
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)
-            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-
-            // Acá arranca la conexión con Firebase, prendemos la ruedita
-            isLoading = true
-
-            auth.signInWithCredential(credential).addOnCompleteListener { authTask ->
-                if (authTask.isSuccessful) {
-                    Log.d("LOGIN_EXITOSO", "Usuario: ${auth.currentUser?.email}")
-                    navController.navigate(Screen.Feed.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                    // Ojo: no hace falta apagar la ruedita acá porque ya cambiamos de pantalla
-                } else {
-                    // Si falló Firebase, apagamos la ruedita para que pueda volver a intentar
-                    isLoading = false
-                    Log.e("LOGIN_ERROR", "Error de Firebase", authTask.exception)
-                }
+            // Si Google nos da el Token, se lo pasamos al ViewModel para que haga la magia
+            account.idToken?.let { token ->
+                viewModel.signInWithFirebase(token)
+            } ?: run {
+                viewModel.setLoading(false)
             }
         } catch (e: ApiException) {
-            // Si el usuario cerró el pop-up de Google sin elegir cuenta, apagamos la ruedita
-            isLoading = false
+            // Si el usuario canceló, apagamos la ruedita
+            viewModel.setLoading(false)
             Log.e("LOGIN_ERROR", "Error de Google o cancelación", e)
         }
     }
 
     val googleGradientBrush = Brush.linearGradient(
         colors = listOf(
-            Color(0xFF4285F4), // Azul
-            Color(0xFFEA4335), // Rojo
-            Color(0xFFFBBC05), // Amarillo
-            Color(0xFF34A853)  // Verde
+            Color(0xFF4285F4),
+            Color(0xFFEA4335),
+            Color(0xFFFBBC05),
+            Color(0xFF34A853)
         )
     )
 
@@ -113,7 +109,6 @@ fun LoginScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "iam", fontSize = 42.sp, fontFamily = interFamily, color = Color.Black)
                 Text(text = "Paw", fontSize = 42.sp, fontFamily = interFamily, color = Color(0xFFFF9800))
@@ -121,7 +116,6 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Textos
             Text(
                 text = "¡Te damos la bienvenida!",
                 fontSize = 28.sp,
@@ -142,11 +136,10 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(56.dp))
 
-            // --- BOTÓN ACTUALIZADO CON ESTADO DE CARGA ---
             Button(
                 onClick = {
-                    if (!isLoading) { // Evitamos que haga doble click mientras carga
-                        isLoading = true // Prendemos la ruedita antes de que salga el pop-up
+                    if (!state.isLoading) {
+                        viewModel.setLoading(true)
                         googleSignInClient.signOut().addOnCompleteListener {
                             launcher.launch(googleSignInClient.signInIntent)
                         }
@@ -167,8 +160,7 @@ fun LoginScreen(navController: NavController) {
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
-                // Si está cargando mostramos la ruedita, sino el logo y texto de siempre
-                if (isLoading) {
+                if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = Color.Black,
