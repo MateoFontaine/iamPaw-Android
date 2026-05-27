@@ -34,7 +34,7 @@ fun DetailScreen(navController: NavController) {
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
 
-    // Datos mockeados de Bobby (el perro del match) para la demo de mañana
+
     val name = "Bobby"
     val breed = "Golden Retriever"
     val location = "Pinamar Centro"
@@ -47,7 +47,6 @@ fun DetailScreen(navController: NavController) {
             .background(bgColor)
             .verticalScroll(rememberScrollState())
     ) {
-        // --- CONTENEDOR DE IMAGEN + BOTÓN VOLVER ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -60,7 +59,7 @@ fun DetailScreen(navController: NavController) {
                 contentScale = ContentScale.Crop
             )
 
-            // Degradado superior para que el botón de volver contraste bien
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -72,7 +71,7 @@ fun DetailScreen(navController: NavController) {
                     )
             )
 
-            // Botón Volver flotante arriba de la foto
+
             IconButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier
@@ -178,7 +177,6 @@ fun DetailScreen(navController: NavController) {
             // Botón Contactar por WhatsApp
             Button(
                 onClick = {
-                    // Intent Implícito para simular el contacto directo por WhatsApp (CU-05)
                     val whatsappIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=5492254000000&text=Hola! Vengo de iamPaw, creo que vi a tu mascota Bobby."))
                     context.startActivity(whatsappIntent)
                 },
