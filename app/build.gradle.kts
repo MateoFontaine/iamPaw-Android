@@ -1,7 +1,17 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services") // Este es el de Firebase, está perfecto que quede
+}
+
+// Cargamos el archivo local.properties para leer las variables seguras
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
 }
 
 android {
@@ -16,6 +26,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Inyectamos la variable DOG_API_KEY para que se genere en BuildConfig
+        buildConfigField("String", "DOG_API_KEY", "\"${localProperties.getProperty("DOG_API_KEY")}\"")
     }
 
     buildTypes {
@@ -33,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // Activamos la generación de la clase BuildConfig
     }
 }
 
@@ -47,8 +61,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    // --- EL ARSENAL DE IAMPAW (Llamando a tu archivo .toml) ---
-    // --- EL ARSENAL DE IAMPAW (Llamando a tu archivo .toml) ---
+    // --- EL ARSENAL DE IAMPAW ---
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -60,6 +73,7 @@ dependencies {
     implementation(libs.glide.compose)
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.google.android.gms:play-services-location:21.2.0")
 
     // --- TESTING ---
     testImplementation(libs.junit)

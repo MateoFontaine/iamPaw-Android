@@ -1,10 +1,13 @@
 package com.example.iampaw.data
 
+import com.example.iampaw.BuildConfig // Asegurate de importar tu BuildConfig
 import retrofit2.http.GET
-import retrofit2.http.Headers
+import retrofit2.http.Header
 
 interface IDogAPI {
-    @Headers("x-api-key: live_WmN7jhycGzaLP0XocFYG1HrKsC4oYmqi8E52PjzNpLKd0oevJ3aynoWLgmaknSsd")
     @GET("v1/breeds")
-    suspend fun getBreeds(): List<DogBreed>
+    suspend fun getBreeds(
+        // Le pasamos el header por parámetro con un valor por defecto
+        @Header("x-api-key") apiKey: String = BuildConfig.DOG_API_KEY
+    ): List<DogBreed>
 }
