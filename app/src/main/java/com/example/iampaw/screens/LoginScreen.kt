@@ -10,14 +10,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -44,7 +43,9 @@ fun LoginScreen(navController: NavController) {
         Font(R.font.inter_extrabold, FontWeight.ExtraBold)
     )
 
-    // --- LOGICA DE FIREBASE (Mantenela igual, sin tocar nada manual) ---
+    // --- NUEVO ESTADO PARA LA RUEDITA DE CARGA ---
+    var isLoading by remember { mutableStateOf(false) }
+
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestIdToken("892894302329-uuio0fu0c0keehrj4es5b0dr8nm4jdnd.apps.googleusercontent.com")
         .requestEmail()
@@ -59,24 +60,30 @@ fun LoginScreen(navController: NavController) {
         try {
             val account = task.getResult(ApiException::class.java)
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+
+            // Acá arranca la conexión con Firebase, prendemos la ruedita
+            isLoading = true
+
             auth.signInWithCredential(credential).addOnCompleteListener { authTask ->
                 if (authTask.isSuccessful) {
                     Log.d("LOGIN_EXITOSO", "Usuario: ${auth.currentUser?.email}")
-
-
                     navController.navigate(Screen.Feed.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
+                    // Ojo: no hace falta apagar la ruedita acá porque ya cambiamos de pantalla
                 } else {
+                    // Si falló Firebase, apagamos la ruedita para que pueda volver a intentar
+                    isLoading = false
                     Log.e("LOGIN_ERROR", "Error de Firebase", authTask.exception)
                 }
             }
         } catch (e: ApiException) {
-            Log.e("LOGIN_ERROR", "Error de Google", e)
+            // Si el usuario cerró el pop-up de Google sin elegir cuenta, apagamos la ruedita
+            isLoading = false
+            Log.e("LOGIN_ERROR", "Error de Google o cancelación", e)
         }
     }
 
-    // Gradiente con los colores exactos de Google para el borde del botón
     val googleGradientBrush = Brush.linearGradient(
         colors = listOf(
             Color(0xFF4285F4), // Azul
@@ -86,24 +93,19 @@ fun LoginScreen(navController: NavController) {
         )
     )
 
-    // --- NUEVO FONDO FULLSCREEN Y SUAVE ---
-
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(
             Color(0xFFFFF9F0),
             Color(0xFFFBFDFF),
             Color(0xFFF0F6FF)
-        ),
-
+        )
     )
-
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundBrush)
     ) {
-        // --- CONTENIDO: Centrado perfecto sobre el fondo de luces ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -140,17 +142,19 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(56.dp))
 
-            // --- BOTÓN GOOGLE MINIMALISTA CON BORDE GRADIENTE ---
+            // --- BOTÓN ACTUALIZADO CON ESTADO DE CARGA ---
             Button(
                 onClick = {
-                    googleSignInClient.signOut().addOnCompleteListener {
-                        launcher.launch(googleSignInClient.signInIntent)
+                    if (!isLoading) { // Evitamos que haga doble click mientras carga
+                        isLoading = true // Prendemos la ruedita antes de que salga el pop-up
+                        googleSignInClient.signOut().addOnCompleteListener {
+                            launcher.launch(googleSignInClient.signInIntent)
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)
-
                     .border(
                         width = 1.5.dp,
                         brush = googleGradientBrush,
@@ -158,27 +162,35 @@ fun LoginScreen(navController: NavController) {
                     ),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.9f), // Toque transparente sutil
+                    containerColor = Color.White.copy(alpha = 0.9f),
                     contentColor = Color.Black
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Imagen del logo de Google (ic_google.xml, ya creado)
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_google),
-                        contentDescription = "Logo de Google",
-                        modifier = Modifier.size(24.dp)
+                // Si está cargando mostramos la ruedita, sino el logo y texto de siempre
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.Black,
+                        strokeWidth = 2.dp
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Continuar con Google",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_google),
+                            contentDescription = "Logo de Google",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Continuar con Google",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }
