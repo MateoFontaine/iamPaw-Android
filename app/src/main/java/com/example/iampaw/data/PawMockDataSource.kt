@@ -4,7 +4,9 @@ import com.example.iampaw.components.detail.DetailState
 import com.example.iampaw.components.feed.DogPost
 import com.example.iampaw.components.match.MatchedDog
 
-class PawMockDataSource : IPawDataSource {
+import javax.inject.Inject
+
+class PawMockDataSource @Inject constructor() : IPawDataSource {
 
     override fun getFeedDogs(): List<DogPost> {
         return listOf(

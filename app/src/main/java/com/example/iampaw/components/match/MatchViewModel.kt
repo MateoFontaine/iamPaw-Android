@@ -2,18 +2,19 @@ package com.example.iampaw.components.match
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.iampaw.data.PawMockDataSource
-import com.example.iampaw.data.PawRepository
+import com.example.iampaw.domain.IPawRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MatchViewModel : ViewModel() {
-
-    // 1. Instanciamos el repositorio con nuestra fuente de datos
-    private val repository = PawRepository(PawMockDataSource())
+@HiltViewModel
+class MatchViewModel @Inject constructor(
+    private val repository: IPawRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MatchState())
     val uiState: StateFlow<MatchState> = _uiState.asStateFlow()
@@ -24,10 +25,7 @@ class MatchViewModel : ViewModel() {
 
     private fun startScanningSimulation() {
         viewModelScope.launch {
-
-
             delay(3500)
-
 
             _uiState.value = MatchState(
                 isScanning = false,

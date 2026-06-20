@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
@@ -45,7 +45,7 @@ import java.util.Locale
 @Composable
 fun ReportScreen(
     navController: NavController,
-    viewModel: ReportViewModel = viewModel() // Inyectamos el ViewModel
+    viewModel: ReportViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
 
