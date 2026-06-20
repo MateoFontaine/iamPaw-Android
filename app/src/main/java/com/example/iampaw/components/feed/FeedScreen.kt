@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
@@ -31,8 +31,8 @@ import com.example.iampaw.components.report.ReportViewModel
 @Composable
 fun FeedScreen(
     navController: NavController,
-    feedViewModel: FeedViewModel = viewModel(),
-    reportViewModel: ReportViewModel = viewModel()
+    feedViewModel: FeedViewModel = hiltViewModel(),
+    reportViewModel: ReportViewModel = hiltViewModel()
 ) {
     // Escuchamos el estado que viene del ViewModel
     val state by feedViewModel.uiState.collectAsState()
