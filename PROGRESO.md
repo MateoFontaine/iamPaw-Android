@@ -25,8 +25,13 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Fecha | Rama | Qué hicimos |
 |-------|------|-------------|
 | 20/06 | `feature/inyeccion-dependencias` | Hilt completo + fix AGP 9/KSP. Compila ✅. Push a origin. |
+| 20/06 | `feature/room-offline-first` | Rama creada (base: `feature/inyeccion-dependencias`). Pendiente: implementar Room. |
 
-**PR pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
+**Rama actual:** `feature/room-offline-first`
+
+**PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
+
+> Room se branchó desde `feature/inyeccion-dependencias` porque Hilt aún no está mergeado en `develop`. Cuando mergees el PR de Hilt, al mergear Room a `develop` todo queda en orden.
 
 ---
 
@@ -119,7 +124,7 @@ app/.../data/PawRepository.kt    → implementación actual (mock + API)
 3. Feed lee reportes desde Room (ya no solo mock)
 4. Estados: Loading / Success / Error
 
-**Rama sugerida:** `feature/room-offline-first` (desde `develop`, después del merge del PR de Hilt)
+**Rama sugerida:** `feature/room-offline-first` ✅ creada
 
 ---
 
