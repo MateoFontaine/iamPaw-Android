@@ -1,0 +1,34 @@
+package com.example.iampaw.data.local
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface IPawDao {
+
+    @Query("SELECT * FROM pet_reports ORDER BY time DESC")
+    fun observeAll(): Flow<List<PetReportLocal>>
+
+    @Query(
+        """
+        SELECT * FROM pet_reports
+        WHERE name LIKE '%' || :query || '%'
+           OR breed LIKE '%' || :query || '%'
+           OR location LIKE '%' || :query || '%'
+        ORDER BY time DESC
+        """
+    )
+    fun search(query: String): Flow<List<PetReportLocal>>
+
+    @Query("SELECT COUNT(*) FROM pet_reports")
+    suspend fun count(): Int
+
+    @Query("SELECT * FROM pet_reports WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): PetReportLocal?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(reports: List<PetReportLocal>)
+}
