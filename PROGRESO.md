@@ -11,7 +11,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 |--------|--------|-------|
 | Hilt (DI) | ✅ Hecho | Pusheado en `feature/inyeccion-dependencias` |
 | Capa `domain/` | ✅ Hecho | Interfaz `IPawRepository` |
-| Room (offline-first) | ⬜ **Siguiente** | SSOT para la UI |
+| Room (offline-first) | ✅ Hecho | Feed observa Room con Flow |
 | Firestore | ⬜ Pendiente | Sync remota de reportes |
 | Tests (MockK) | ⬜ Pendiente | ViewModels + Repository (Hilt lo facilita) |
 | Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
@@ -25,7 +25,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Fecha | Rama | Qué hicimos |
 |-------|------|-------------|
 | 20/06 | `feature/inyeccion-dependencias` | Hilt completo + fix AGP 9/KSP. Compila ✅. Push a origin. |
-| 20/06 | `feature/room-offline-first` | Rama creada (base: `feature/inyeccion-dependencias`). Pendiente: implementar Room. |
+| 20/06 | `feature/room-offline-first` | Room: Entity, Dao, Database, Feed offline-first. Pendiente: probar en device. |
 
 **Rama actual:** `feature/room-offline-first`
 
@@ -50,7 +50,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
           │                         │
           │              ┌──────────┴──────────┐
           │              ▼                     ▼
-          │         Room (⬜)            Firestore (⬜)
+          │         Room (✅)            Firestore (⬜)
           │         SSOT local           sync remota
           │              ▲                     ▲
           │              └──────────┬──────────┘
@@ -108,27 +108,52 @@ app/.../data/PawRepository.kt    → implementación actual (mock + API)
 
 ---
 
-## 2. Room — ⬜ SIGUIENTE
+## 2. Room — Offline-first ✅
 
-**Objetivo:** Room como **única fuente de verdad** para la UI (offline-first).
+**Objetivo:** Room como **única fuente de verdad** para el Feed (offline-first).
 
-**Qué vamos a crear:**
-- `data/local/PetReportLocal.kt` — `@Entity` (tabla)
-- `data/local/IPawDao.kt` — `@Dao` (queries + `Flow<List<>>`)
-- `data/local/PawDatabase.kt` — `@Database`
-- `data/local/ModelMapping.kt` — `toLocal()` / `toExternal()`
+### Checklist
 
-**Flujo objetivo:**
-1. UI observa `Flow` desde Room
-2. Retrofit trae razas → guarda en Room
-3. Feed lee reportes desde Room (ya no solo mock)
-4. Estados: Loading / Success / Error
+- [x] `PetReportLocal.kt` — `@Entity`
+- [x] `IPawDao.kt` — `observeAll()`, `search()`, `insertAll()`
+- [x] `PawDatabase.kt` — `@Database` + singleton
+- [x] `ModelMapping.kt` — `PetReportLocal` ↔ `DogPost`
+- [x] Hilt provee `PawDatabase` + `IPawDao` en `dataModules.kt`
+- [x] `PawRepository` observa Room + seed inicial desde mock si DB vacía
+- [x] `FeedViewModel` observa `Flow` + Loading/Success/Error
+- [x] `FeedScreen` — loading, error, búsqueda reactiva
+- [ ] Probar offline en dispositivo
 
-**Rama sugerida:** `feature/room-offline-first` ✅ creada
+### Archivos principales
+
+```
+data/local/PetReportLocal.kt   → tabla SQLite
+data/local/IPawDao.kt          → queries + Flow
+data/local/PawDatabase.kt      → instancia Room
+data/local/ModelMapping.kt     → conversión Local ↔ UI
+data/PawRepository.kt          → observeFeed() + refreshFeedIfEmpty()
+components/feed/FeedViewModel.kt → collect Flow
+```
+
+### Cómo testear vos
+
+1. **Sync Gradle** → Run app → Feed muestra Rocco, Luna, Milo
+2. **Búsqueda:** escribí "Rocco" o "Golden" → filtra la lista
+3. **Offline:** cerrá app → activá modo avión → abrí app → feed sigue con datos
+4. **Persistencia:** desinstalá y reinstalá → seed vuelve a cargar mock en primera apertura
+
+### Flujo de datos (Feed)
+
+```
+FeedScreen → FeedViewModel → IPawRepository → IPawDao → Room (SQLite)
+                                    ↑
+                         refreshFeedIfEmpty() si DB vacía
+                         (seed desde PawMockDataSource, una sola vez)
+```
 
 ---
 
-## 3. Firestore — Pendiente
+## 3. Firestore — ⬜ SIGUIENTE
 
 **Objetivo:** reportes de usuarios persisten en la nube y sincronizan con Room.
 
@@ -150,7 +175,7 @@ Patrón del demo (clase 13):
 ## Orden recomendado hasta la entrega
 
 1. ✅ Hilt
-2. ⬜ Room (feed offline-first)
+2. ✅ Room (feed offline-first)
 3. ⬜ Firestore (reportes en la nube)
 4. ⬜ Tests unitarios
 5. ⬜ Glide + Splash API + `collectAsStateWithLifecycle`
@@ -159,19 +184,20 @@ Patrón del demo (clase 13):
 
 ---
 
-## Arquitectura actual (post-Hilt)
+## Arquitectura actual (post-Room)
 
 ```
-ViewModel  →  IPawRepository  →  PawRepository
-                                      ├── PawMockDataSource (feed, detalle, match)
-                                      └── PawApiDataSource   (razas — The Dog API)
+FeedViewModel  →  IPawRepository  →  PawRepository
+                                         ├── IPawDao (Room) ← Feed observa Flow
+                                         ├── PawMockDataSource (seed + detalle/match)
+                                         └── PawApiDataSource (razas — The Dog API)
 ```
 
-**Arquitectura objetivo (post-Room + Firestore):**
+**Arquitectura objetivo (post-Firestore):**
 
 ```
-ViewModel  →  IPawRepository  →  PawRepository
-                                      ├── PawDao (Room) ← UI observa esto
-                                      ├── PawApiDataSource → escribe en Room
-                                      └── FirestoreDataSource → sync con Room
+FeedViewModel  →  IPawRepository  →  PawRepository
+                                         ├── IPawDao (Room) ← UI observa esto
+                                         ├── FirestoreDataSource → sync con Room
+                                         └── PawApiDataSource → razas en Room
 ```

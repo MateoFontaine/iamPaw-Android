@@ -51,6 +51,23 @@ fun FeedScreen(
             .fillMaxSize()
             .background(Color(0xFFFBFBFB))
     ) {
+        if (state.isLoading && state.posts.isEmpty()) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = Color(0xFFFF9800)
+            )
+        }
+
+        state.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+            )
+        }
+
         // --- CAPA 1: EL FEED ---
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -79,6 +96,18 @@ fun FeedScreen(
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = feedViewModel::onSearchQueryChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Buscar por nombre, raza o ubicación...") },
+                        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                        shape = RoundedCornerShape(20.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // BARRA DE BÚSQUEDA Y FILTROS
                     Row(
