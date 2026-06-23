@@ -19,14 +19,8 @@ class PawRepository @Inject constructor(
     private val apiDataSource: PawApiDataSource
 ) : IPawRepository {
 
-    override fun observeFeed(searchQuery: String): Flow<List<DogPost>> {
-        val source = if (searchQuery.isBlank()) {
-            pawDao.observeAll()
-        } else {
-            pawDao.search(searchQuery)
-        }
-        return source.map { reports -> reports.toDogPosts() }
-    }
+    override fun observeFeed(): Flow<List<DogPost>> =
+        pawDao.observeAll().map { reports -> reports.toDogPosts() }
 
     override suspend fun refreshFeedIfEmpty() {
         if (pawDao.count() == 0) {

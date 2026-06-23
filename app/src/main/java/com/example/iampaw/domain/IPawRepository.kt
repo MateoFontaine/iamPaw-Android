@@ -7,7 +7,7 @@ import com.example.iampaw.data.DogBreed
 import kotlinx.coroutines.flow.Flow
 
 interface IPawRepository {
-    fun observeFeed(searchQuery: String = ""): Flow<List<DogPost>>
+    fun observeFeed(): Flow<List<DogPost>>
     suspend fun refreshFeedIfEmpty()
     fun getDogDetail(id: String): DetailState
     fun getMatchedDogs(): List<MatchedDog>
