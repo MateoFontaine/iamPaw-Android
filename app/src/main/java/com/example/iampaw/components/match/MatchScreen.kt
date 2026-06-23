@@ -76,7 +76,12 @@ fun MatchScreen(
             if (state.isScanning) {
                 ScanningAnimation(orangePaw)
             } else {
-                MatchResultsList(orangePaw, navController, state.matches) // Pasamos la lista del State
+                MatchResultsList(
+                    color = orangePaw,
+                    navController = navController,
+                    viewModel = viewModel,
+                    state = state
+                )
             }
         }
     }
@@ -127,7 +132,14 @@ fun ScanningAnimation(color: Color) {
 }
 
 @Composable
-fun MatchResultsList(color: Color, navController: NavController, matches: List<MatchedDog>) {
+fun MatchResultsList(
+    color: Color,
+    navController: NavController,
+    viewModel: MatchViewModel,
+    state: MatchState
+) {
+    val locationLabel = state.locationHint.ifBlank { "tu zona" }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -136,15 +148,14 @@ fun MatchResultsList(color: Color, navController: NavController, matches: List<M
     ) {
         item {
             Text(
-                text = "La IA detectó reportes activos en Pinamar con alta tasa de similitud visual:",
+                text = "La IA detectó reportes activos cerca de $locationLabel con alta tasa de similitud visual:",
                 color = Color.Gray,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
 
-        // Iteramos sobre la lista dinámica que viene del ViewModel
-        items(matches) { matchedDog ->
+        items(state.matches) { matchedDog ->
             MatchCard(
                 name = matchedDog.name,
                 breed = matchedDog.breed,
@@ -159,19 +170,41 @@ fun MatchResultsList(color: Color, navController: NavController, matches: List<M
 
         item {
             Spacer(modifier = Modifier.height(16.dp))
+
+            state.publishError?.let { error ->
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+            }
+
             Button(
                 onClick = {
-                    navController.navigate("feed_screen") {
-                        popUpTo("feed_screen") { inclusive = true }
+                    viewModel.publishReport {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(Screen.Feed.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 },
+                enabled = !state.isPublishing,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = color)
             ) {
-                Text("Ninguno es mi mascota. Publicar Alerta", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                if (state.isPublishing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                } else {
+                    Text("Ninguno es mi mascota. Publicar Alerta", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                }
             }
             Spacer(modifier = Modifier.height(32.dp))
         }
