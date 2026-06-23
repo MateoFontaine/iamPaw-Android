@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,79 +60,28 @@ fun FeedScreen(
             .background(Color(0xFFFBFBFB))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header fijo — FUERA del LazyColumn para que el input no pierda foco
-            Column(
+            // Solo el logo queda fijo al scrollear
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(SpanStyle(color = Color.Black)) { append("iam") }
-                            withStyle(SpanStyle(color = Color(0xFFFF9800))) { append("Paw") }
-                        },
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    IconButton(onClick = { /* TODO: Notificaciones */ }) {
-                        Icon(Icons.Outlined.Notifications, contentDescription = null)
-                    }
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(SpanStyle(color = Color.Black)) { append("iam") }
+                        withStyle(SpanStyle(color = Color(0xFFFF9800))) { append("Paw") }
+                    },
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black
+                )
+                IconButton(onClick = { /* TODO: Notificaciones */ }) {
+                    Icon(Icons.Outlined.Notifications, contentDescription = null)
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = feedSearchText,
-                        onValueChange = { feedSearchText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Buscar por nombre o raza") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
-                            if (feedSearchText.isNotEmpty()) {
-                                IconButton(onClick = { feedSearchText = "" }) {
-                                    Icon(Icons.Outlined.Close, contentDescription = "Borrar")
-                                }
-                            }
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true
-                    )
-
-                    Surface(
-                        onClick = { showFilters = true },
-                        modifier = Modifier.size(56.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFFFF3E0),
-                        border = BorderStroke(1.dp, Color(0xFFFFE0B2))
-                    ) {
-                        Icon(
-                            Icons.Outlined.Tune,
-                            contentDescription = "Filtros",
-                            tint = Color(0xFFFF9800),
-                            modifier = Modifier.padding(14.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Cerca de tu ubicación", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Solo las tarjetas scrollean
             Box(modifier = Modifier.weight(1f)) {
                 if (state.isLoading && state.posts.isEmpty()) {
                     CircularProgressIndicator(
@@ -150,14 +100,6 @@ fun FeedScreen(
                     )
                 }
 
-                if (!state.isLoading && filteredPosts.isEmpty()) {
-                    Text(
-                        text = "No se encontraron mascotas",
-                        color = Color.Gray,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
@@ -167,6 +109,70 @@ fun FeedScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
+                    item(key = "feed_search") {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = feedSearchText,
+                                    onValueChange = { feedSearchText = it },
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = { Text("Buscar por nombre o raza") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Search, contentDescription = null)
+                                    },
+                                    trailingIcon = {
+                                        if (feedSearchText.isNotEmpty()) {
+                                            IconButton(onClick = { feedSearchText = "" }) {
+                                                Icon(Icons.Outlined.Close, contentDescription = "Borrar")
+                                            }
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    singleLine = true
+                                )
+
+                                Surface(
+                                    onClick = { showFilters = true },
+                                    modifier = Modifier.size(56.dp),
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color(0xFFFFF3E0),
+                                    border = BorderStroke(1.dp, Color(0xFFFFE0B2))
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Tune,
+                                        contentDescription = "Filtros",
+                                        tint = Color(0xFFFF9800),
+                                        modifier = Modifier.padding(14.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "Cerca de tu ubicación",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (!state.isLoading && filteredPosts.isEmpty()) {
+                        item(key = "feed_empty") {
+                            Text(
+                                text = "No se encontraron mascotas",
+                                color = Color.Gray,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
                     items(filteredPosts, key = { it.id }) { post ->
                         DogImmersiveCard(
                             post = post,
