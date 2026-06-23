@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface IPawDao {
 
-    @Query("SELECT * FROM pet_reports ORDER BY time DESC")
+    @Query("SELECT * FROM pet_reports ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<PetReportLocal>>
 
     @Query(
@@ -18,7 +18,7 @@ interface IPawDao {
         WHERE name LIKE '%' || :query || '%'
            OR breed LIKE '%' || :query || '%'
            OR location LIKE '%' || :query || '%'
-        ORDER BY time DESC
+        ORDER BY createdAt DESC
         """
     )
     fun search(query: String): Flow<List<PetReportLocal>>

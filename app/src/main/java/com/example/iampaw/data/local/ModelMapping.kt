@@ -12,14 +12,16 @@ fun PetReportLocal.toDogPost() = DogPost(
     status = status
 )
 
-fun DogPost.toLocal() = PetReportLocal(
+fun DogPost.toLocal(userId: String = "", createdAt: Long = 0L) = PetReportLocal(
     id = id,
     name = name,
     breed = breed,
     location = location,
     time = time,
     imageUrl = imageUrl,
-    status = status
+    status = status,
+    userId = userId,
+    createdAt = createdAt
 )
 
 fun List<PetReportLocal>.toDogPosts() = map { it.toDogPost() }
