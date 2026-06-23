@@ -59,131 +59,128 @@ fun FeedScreen(
             .fillMaxSize()
             .background(Color(0xFFFBFBFB))
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Solo el logo queda fijo al scrollear
-            Row(
+        if (state.isLoading && state.posts.isEmpty()) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = Color(0xFFFF9800)
+            )
+        }
+
+        state.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(SpanStyle(color = Color.Black)) { append("iam") }
-                        withStyle(SpanStyle(color = Color(0xFFFF9800))) { append("Paw") }
-                    },
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black
-                )
-                IconButton(onClick = { /* TODO: Notificaciones */ }) {
-                    Icon(Icons.Outlined.Notifications, contentDescription = null)
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+            )
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = 120.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            item(key = "feed_header") {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(SpanStyle(color = Color.Black)) { append("iam") }
+                                withStyle(SpanStyle(color = Color(0xFFFF9800))) { append("Paw") }
+                            },
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                        IconButton(onClick = { /* TODO: Notificaciones */ }) {
+                            Icon(Icons.Outlined.Notifications, contentDescription = null)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = feedSearchText,
+                            onValueChange = { feedSearchText = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Buscar por nombre o raza") },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.Search, contentDescription = null)
+                            },
+                            trailingIcon = {
+                                if (feedSearchText.isNotEmpty()) {
+                                    IconButton(onClick = { feedSearchText = "" }) {
+                                        Icon(Icons.Outlined.Close, contentDescription = "Borrar")
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+
+                        Surface(
+                            onClick = { showFilters = true },
+                            modifier = Modifier.size(56.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFFFFF3E0),
+                            border = BorderStroke(1.dp, Color(0xFFFFE0B2))
+                        ) {
+                            Icon(
+                                Icons.Outlined.Tune,
+                                contentDescription = "Filtros",
+                                tint = Color(0xFFFF9800),
+                                modifier = Modifier.padding(14.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Cerca de tu ubicación",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
-            Box(modifier = Modifier.weight(1f)) {
-                if (state.isLoading && state.posts.isEmpty()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFFFF9800)
-                    )
-                }
-
-                state.errorMessage?.let { message ->
+            if (!state.isLoading && filteredPosts.isEmpty()) {
+                item(key = "feed_empty") {
                     Text(
-                        text = message,
-                        color = MaterialTheme.colorScheme.error,
+                        text = "No se encontraron mascotas",
+                        color = Color.Gray,
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 16.dp)
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
+            }
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        bottom = 120.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    item(key = "feed_search") {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = feedSearchText,
-                                    onValueChange = { feedSearchText = it },
-                                    modifier = Modifier.weight(1f),
-                                    placeholder = { Text("Buscar por nombre o raza") },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.Search, contentDescription = null)
-                                    },
-                                    trailingIcon = {
-                                        if (feedSearchText.isNotEmpty()) {
-                                            IconButton(onClick = { feedSearchText = "" }) {
-                                                Icon(Icons.Outlined.Close, contentDescription = "Borrar")
-                                            }
-                                        }
-                                    },
-                                    shape = RoundedCornerShape(12.dp),
-                                    singleLine = true
-                                )
-
-                                Surface(
-                                    onClick = { showFilters = true },
-                                    modifier = Modifier.size(56.dp),
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = Color(0xFFFFF3E0),
-                                    border = BorderStroke(1.dp, Color(0xFFFFE0B2))
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Tune,
-                                        contentDescription = "Filtros",
-                                        tint = Color(0xFFFF9800),
-                                        modifier = Modifier.padding(14.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                "Cerca de tu ubicación",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    if (!state.isLoading && filteredPosts.isEmpty()) {
-                        item(key = "feed_empty") {
-                            Text(
-                                text = "No se encontraron mascotas",
-                                color = Color.Gray,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 32.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    items(filteredPosts, key = { it.id }) { post ->
-                        DogImmersiveCard(
-                            post = post,
-                            onClick = { navController.navigate(Screen.Detail.route) }
-                        )
-                    }
-                }
+            items(filteredPosts, key = { it.id }) { post ->
+                DogImmersiveCard(
+                    post = post,
+                    onClick = { navController.navigate(Screen.Detail.route) }
+                )
             }
         }
 
-        // Navbar burbuja
+        // Navbar burbuja — único elemento fijo
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
