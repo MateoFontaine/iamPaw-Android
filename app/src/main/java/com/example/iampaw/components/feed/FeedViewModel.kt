@@ -53,6 +53,5 @@ class FeedViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
-        _uiState.update { it.copy(searchQuery = query, isLoading = true) }
     }
 }

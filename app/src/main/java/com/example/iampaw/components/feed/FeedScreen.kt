@@ -25,180 +25,164 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
-import com.example.iampaw.components.report.ReportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     navController: NavController,
-    feedViewModel: FeedViewModel = hiltViewModel(),
-    reportViewModel: ReportViewModel = hiltViewModel()
+    feedViewModel: FeedViewModel = hiltViewModel()
 ) {
-    // Escuchamos el estado que viene del ViewModel
     val state by feedViewModel.uiState.collectAsState()
 
-    // Estados visuales locales
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-
-    // Estados para el buscador de razas
-    val breeds by reportViewModel.breeds.collectAsState()
-    var searchBreedText by remember { mutableStateOf("") }
-    var expandedBreedSearch by remember { mutableStateOf(false) }
+    var feedSearchText by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFBFBFB))
     ) {
-        if (state.isLoading && state.posts.isEmpty()) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = Color(0xFFFF9800)
-            )
-        }
-
-        state.errorMessage?.let { message ->
-            Text(
-                text = message,
-                color = MaterialTheme.colorScheme.error,
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header fijo — FUERA del LazyColumn para que el input no pierda foco
+            Column(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 80.dp)
-            )
-        }
-
-        // --- CAPA 1: EL FEED ---
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            item {
-                Column(modifier = Modifier.statusBarsPadding()) {
-                    // HEADER
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle(SpanStyle(color = Color.Black)) { append("iam") }
-                                withStyle(SpanStyle(color = Color(0xFFFF9800))) { append("Paw") }
-                            },
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                        IconButton(onClick = { /* TODO: Notificaciones */ }) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = null)
-                        }
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(color = Color.Black)) { append("iam") }
+                            withStyle(SpanStyle(color = Color(0xFFFF9800))) { append("Paw") }
+                        },
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                    IconButton(onClick = { /* TODO: Notificaciones */ }) {
+                        Icon(Icons.Outlined.Notifications, contentDescription = null)
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     OutlinedTextField(
-                        value = state.searchQuery,
-                        onValueChange = feedViewModel::onSearchQueryChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        value = feedSearchText,
+                        onValueChange = { text ->
+                            feedSearchText = text
+                            feedViewModel.onSearchQueryChange(text)
+                        },
+                        modifier = Modifier.weight(1f),
                         placeholder = { Text("Buscar por nombre, raza o ubicación...") },
-                        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Search,
+                                contentDescription = null,
+                                tint = Color(0xFFFF9800)
+                            )
+                        },
+                        trailingIcon = {
+                            if (feedSearchText.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    feedSearchText = ""
+                                    feedViewModel.onSearchQueryChange("")
+                                }) {
+                                    Icon(
+                                        Icons.Outlined.Close,
+                                        contentDescription = "Borrar",
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        },
                         shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFFF9800),
+                            unfocusedBorderColor = Color(0xFFEEEEEE),
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White
+                        ),
                         singleLine = true
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // BARRA DE BÚSQUEDA Y FILTROS
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Surface(
+                        onClick = { showFilters = true },
+                        modifier = Modifier.size(56.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFFFF3E0),
+                        border = BorderStroke(1.dp, Color(0xFFFFE0B2))
                     ) {
-                        ExposedDropdownMenuBox(
-                            expanded = expandedBreedSearch,
-                            onExpandedChange = { expandedBreedSearch = !expandedBreedSearch },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            OutlinedTextField(
-                                value = searchBreedText,
-                                onValueChange = {
-                                    searchBreedText = it
-                                    expandedBreedSearch = true
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor(),
-                                placeholder = { Text("Buscar raza...") },
-                                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = Color(0xFFFF9800)) },
-                                trailingIcon = {
-                                    if (searchBreedText.isNotEmpty()) {
-                                        IconButton(onClick = { searchBreedText = "" }) {
-                                            Icon(Icons.Outlined.Close, contentDescription = "Borrar", modifier = Modifier.size(18.dp))
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFFFF9800),
-                                    unfocusedBorderColor = Color(0xFFEEEEEE),
-                                    unfocusedContainerColor = Color.White,
-                                    focusedContainerColor = Color.White
-                                ),
-                                singleLine = true
-                            )
-
-                            val filteredOptions = breeds.filter { it.name.contains(searchBreedText, ignoreCase = true) }
-                            if (filteredOptions.isNotEmpty() && searchBreedText.isNotEmpty()) {
-                                ExposedDropdownMenu(
-                                    expanded = expandedBreedSearch,
-                                    onDismissRequest = { expandedBreedSearch = false },
-                                    modifier = Modifier.background(Color.White)
-                                ) {
-                                    filteredOptions.take(4).forEach { breed ->
-                                        DropdownMenuItem(
-                                            text = { Text(breed.name, fontWeight = FontWeight.Medium) },
-                                            onClick = {
-                                                searchBreedText = breed.name
-                                                expandedBreedSearch = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Surface(
-                            onClick = { showFilters = true },
-                            modifier = Modifier.size(56.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFFFF3E0),
-                            border = BorderStroke(1.dp, Color(0xFFFFE0B2))
-                        ) {
-                            Icon(
-                                Icons.Outlined.Tune,
-                                contentDescription = "Filtros",
-                                tint = Color(0xFFFF9800),
-                                modifier = Modifier.padding(14.dp)
-                            )
-                        }
+                        Icon(
+                            Icons.Outlined.Tune,
+                            contentDescription = "Filtros",
+                            tint = Color(0xFFFF9800),
+                            modifier = Modifier.padding(14.dp)
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text("Cerca de tu ubicación", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Cerca de tu ubicación", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // LISTA DE MASCOTAS
-            items(state.posts) { post ->
-                DogImmersiveCard(
-                    post = post,
-                    onClick = { navController.navigate(Screen.Detail.route) }
-                )
+            // Solo las tarjetas scrollean
+            Box(modifier = Modifier.weight(1f)) {
+                if (state.isLoading && state.posts.isEmpty()) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFFFF9800)
+                    )
+                }
+
+                state.errorMessage?.let { message ->
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp)
+                    )
+                }
+
+                if (!state.isLoading && state.posts.isEmpty()) {
+                    Text(
+                        text = "No se encontraron mascotas",
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 120.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    items(state.posts, key = { it.id }) { post ->
+                        DogImmersiveCard(
+                            post = post,
+                            onClick = { navController.navigate(Screen.Detail.route) }
+                        )
+                    }
+                }
             }
         }
 
-        // --- CAPA 2: NAVBAR BURBUJA ---
+        // Navbar burbuja
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -232,7 +216,6 @@ fun FeedScreen(
             }
         }
 
-        // --- CAPA 3: MODAL DE FILTROS RÁPIDOS ---
         if (showFilters) {
             ModalBottomSheet(
                 onDismissRequest = { showFilters = false },

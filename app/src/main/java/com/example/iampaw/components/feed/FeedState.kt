@@ -12,7 +12,6 @@ data class DogPost(
 
 data class FeedState(
     val posts: List<DogPost> = emptyList(),
-    val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
