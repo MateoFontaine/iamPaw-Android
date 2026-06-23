@@ -38,6 +38,21 @@ fun FeedScreen(
     val sheetState = rememberModalBottomSheetState()
     var feedSearchText by remember { mutableStateOf("") }
 
+    // Filtro 100% local: escribir no toca Room ni el ViewModel → no pierde foco
+    val filteredPosts = remember(state.posts, feedSearchText) {
+        val query = feedSearchText.trim().lowercase()
+        if (query.isEmpty()) {
+            state.posts
+        } else {
+            state.posts.filter { post ->
+                post.name.lowercase().contains(query) ||
+                    post.breed.lowercase().contains(query) ||
+                    post.location.lowercase().contains(query) ||
+                    post.status.lowercase().contains(query)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -78,10 +93,7 @@ fun FeedScreen(
                 ) {
                     OutlinedTextField(
                         value = feedSearchText,
-                        onValueChange = { text ->
-                            feedSearchText = text
-                            feedViewModel.onSearchQueryChange(text)
-                        },
+                        onValueChange = { feedSearchText = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Buscar por nombre, raza o ubicación...") },
                         leadingIcon = {
@@ -93,10 +105,7 @@ fun FeedScreen(
                         },
                         trailingIcon = {
                             if (feedSearchText.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    feedSearchText = ""
-                                    feedViewModel.onSearchQueryChange("")
-                                }) {
+                                IconButton(onClick = { feedSearchText = "" }) {
                                     Icon(
                                         Icons.Outlined.Close,
                                         contentDescription = "Borrar",
@@ -155,7 +164,7 @@ fun FeedScreen(
                     )
                 }
 
-                if (!state.isLoading && state.posts.isEmpty()) {
+                if (!state.isLoading && filteredPosts.isEmpty()) {
                     Text(
                         text = "No se encontraron mascotas",
                         color = Color.Gray,
@@ -172,7 +181,7 @@ fun FeedScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    items(state.posts, key = { it.id }) { post ->
+                    items(filteredPosts, key = { it.id }) { post ->
                         DogImmersiveCard(
                             post = post,
                             onClick = { navController.navigate(Screen.Detail.route) }

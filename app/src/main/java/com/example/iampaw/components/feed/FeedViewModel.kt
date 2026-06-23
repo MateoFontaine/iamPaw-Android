@@ -4,17 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.iampaw.domain.IPawRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class FeedViewModel @Inject constructor(
     private val repository: IPawRepository
@@ -22,8 +19,6 @@ class FeedViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(FeedState(isLoading = true))
     val uiState: StateFlow<FeedState> = _uiState.asStateFlow()
-
-    private val searchQuery = MutableStateFlow("")
 
     init {
         observeFeed()
@@ -38,8 +33,7 @@ class FeedViewModel @Inject constructor(
                 return@launch
             }
 
-            searchQuery
-                .flatMapLatest { query -> repository.observeFeed(query) }
+            repository.observeFeed()
                 .catch { e ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
                 }
@@ -49,9 +43,5 @@ class FeedViewModel @Inject constructor(
                     }
                 }
         }
-    }
-
-    fun onSearchQueryChange(query: String) {
-        searchQuery.value = query
     }
 }
