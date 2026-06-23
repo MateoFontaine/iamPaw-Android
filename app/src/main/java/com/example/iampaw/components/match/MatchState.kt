@@ -11,5 +11,8 @@ data class MatchedDog(
 
 data class MatchState(
     val isScanning: Boolean = true,
-    val matches: List<MatchedDog> = emptyList()
+    val matches: List<MatchedDog> = emptyList(),
+    val locationHint: String = "",
+    val isPublishing: Boolean = false,
+    val publishError: String? = null
 )
