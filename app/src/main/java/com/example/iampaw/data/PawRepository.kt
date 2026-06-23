@@ -5,6 +5,7 @@ import com.example.iampaw.components.detail.DetailState
 import com.example.iampaw.components.feed.DogPost
 import com.example.iampaw.components.match.MatchedDog
 import com.example.iampaw.data.local.IPawDao
+import com.example.iampaw.data.local.ReportImageStorage
 import com.example.iampaw.data.local.toDogPosts
 import com.example.iampaw.data.local.toLocal
 import com.example.iampaw.data.remote.FirestoreReportDataSource
@@ -23,7 +24,8 @@ class PawRepository @Inject constructor(
     private val mockDataSource: PawMockDataSource,
     private val apiDataSource: PawApiDataSource,
     private val firestoreDataSource: FirestoreReportDataSource,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val reportImageStorage: ReportImageStorage
 ) : IPawRepository {
 
     override fun observeFeed(): Flow<List<DogPost>> =
@@ -43,7 +45,8 @@ class PawRepository @Inject constructor(
     override suspend fun saveReport(report: DogPost): Result<Unit> {
         return try {
             val userId = firebaseAuth.currentUser?.uid.orEmpty()
-            val local = report.toLocal(
+            val persistedImageUrl = reportImageStorage.persistReportImage(report.imageUrl, report.id)
+            val local = report.copy(imageUrl = persistedImageUrl).toLocal(
                 userId = userId,
                 createdAt = System.currentTimeMillis()
             )
