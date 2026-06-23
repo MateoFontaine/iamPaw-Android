@@ -95,32 +95,18 @@ fun FeedScreen(
                         value = feedSearchText,
                         onValueChange = { feedSearchText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Buscar por nombre, raza o ubicación...") },
+                        placeholder = { Text("Buscar por nombre o raza") },
                         leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Search,
-                                contentDescription = null,
-                                tint = Color(0xFFFF9800)
-                            )
+                            Icon(Icons.Outlined.Search, contentDescription = null)
                         },
                         trailingIcon = {
                             if (feedSearchText.isNotEmpty()) {
                                 IconButton(onClick = { feedSearchText = "" }) {
-                                    Icon(
-                                        Icons.Outlined.Close,
-                                        contentDescription = "Borrar",
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    Icon(Icons.Outlined.Close, contentDescription = "Borrar")
                                 }
                             }
                         },
-                        shape = RoundedCornerShape(20.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFFF9800),
-                            unfocusedBorderColor = Color(0xFFEEEEEE),
-                            unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White
-                        ),
+                        shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
 
