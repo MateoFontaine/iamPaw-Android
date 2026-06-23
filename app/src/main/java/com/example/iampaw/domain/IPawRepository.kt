@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 interface IPawRepository {
     fun observeFeed(): Flow<List<DogPost>>
     suspend fun refreshFeedIfEmpty()
+    suspend fun saveReport(report: DogPost): Result<Unit>
+    suspend fun syncReportsFromFirestore()
     fun getDogDetail(id: String): DetailState
     fun getMatchedDogs(): List<MatchedDog>
     suspend fun getBreeds(): List<DogBreed>
