@@ -14,10 +14,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -48,27 +50,21 @@ fun ReportScreen(
     viewModel: ReportViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-
-    // Observamos los estados
     val state by viewModel.uiState.collectAsState()
-    val breeds by viewModel.breeds.collectAsState()
 
-    // Estados puramente visuales (se quedan en la UI)
+    var nameText by rememberSaveable { mutableStateOf("") }
+    var breedText by rememberSaveable { mutableStateOf("") }
+    var locationText by rememberSaveable { mutableStateOf("") }
+    var colorText by rememberSaveable { mutableStateOf("") }
+    var sizeText by rememberSaveable { mutableStateOf("") }
+    var detailsText by rememberSaveable { mutableStateOf("") }
+
     var showPhotoOptions by remember { mutableStateOf(false) }
-    var showBreedPicker by remember { mutableStateOf(false) }
-
-    val breedSuggestions = remember(state.breedText, breeds) {
-        if (state.breedText.isBlank()) {
-            breeds.take(8)
-        } else {
-            breeds.filter { it.name.contains(state.breedText, ignoreCase = true) }.take(8)
-        }
-    }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        if(uri != null) viewModel.onImageSelected(uri)
+        if (uri != null) viewModel.onImageSelected(uri)
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -92,24 +88,29 @@ fun ReportScreen(
                     val geocoder = Geocoder(context, Locale.getDefault())
                     val direcciones = geocoder.getFromLocation(lat, lng, 1)
 
-                    if (!direcciones.isNullOrEmpty()) {
-                        viewModel.updateLocationText(direcciones[0].getAddressLine(0) ?: "Dirección desconocida")
+                    locationText = if (!direcciones.isNullOrEmpty()) {
+                        direcciones[0].getAddressLine(0) ?: "Dirección desconocida"
                     } else {
-                        viewModel.updateLocationText("Lat: $lat, Lng: $lng")
+                        "Lat: $lat, Lng: $lng"
                     }
                 } catch (e: Exception) {
-                    viewModel.updateLocationText("Coordenadas: $lat, $lng")
+                    locationText = "Coordenadas: $lat, $lng"
                 } finally {
                     viewModel.setLocationLoading(false)
                 }
             }
         } else {
-            viewModel.updateLocationText("Permiso denegado")
+            locationText = "Permiso denegado"
         }
     }
 
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = orangePaw,
+        unfocusedContainerColor = Color.White,
+        focusedContainerColor = Color.White
+    )
 
     if (showPhotoOptions) {
         AlertDialog(
@@ -251,80 +252,24 @@ fun ReportScreen(
 
         if (state.isLost) {
             Text("Nombre de la mascota", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
-            key("pet-name") {
-                OutlinedTextField(
-                    value = state.nameText,
-                    onValueChange = viewModel::updateNameText,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ej: Rocco") },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = orangePaw,
-                        unfocusedContainerColor = Color.White,
-                        focusedContainerColor = Color.White
-                    ),
-                    singleLine = true
-                )
-            }
+            OutlinedTextField(
+                value = nameText,
+                onValueChange = { nameText = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Ej: Rocco") },
+                shape = RoundedCornerShape(16.dp),
+                colors = fieldColors,
+                singleLine = true
+            )
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Text("Raza", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf("Mestizo", "Calle").forEach { quickBreed ->
-                FilterChip(
-                    selected = state.breedText.equals(quickBreed, ignoreCase = true),
-                    onClick = { viewModel.updateBreedText(quickBreed) },
-                    label = { Text(quickBreed) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = orangePaw.copy(alpha = 0.15f),
-                        selectedLabelColor = orangePaw
-                    )
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(modifier = Modifier.fillMaxWidth()) {
-            key("breed") {
-                OutlinedTextField(
-                    value = state.breedText,
-                    onValueChange = viewModel::updateBreedText,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ej: Golden Retriever") },
-                    trailingIcon = {
-                        IconButton(onClick = { showBreedPicker = true }) {
-                            Icon(Icons.Outlined.ArrowDropDownCircle, contentDescription = "Ver razas")
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = orangePaw,
-                        unfocusedContainerColor = Color.White,
-                        focusedContainerColor = Color.White
-                    ),
-                    singleLine = true
-                )
-            }
-
-            DropdownMenu(
-                expanded = showBreedPicker,
-                onDismissRequest = { showBreedPicker = false },
-                modifier = Modifier.background(Color.White)
-            ) {
-                breedSuggestions.forEach { breed ->
-                    DropdownMenuItem(
-                        text = { Text(breed.name) },
-                        onClick = {
-                            viewModel.updateBreedText(breed.name)
-                            showBreedPicker = false
-                        }
-                    )
-                }
-            }
-        }
+        BreedFieldWithAutocomplete(
+            breedText = breedText,
+            onBreedTextChange = { breedText = it },
+            fieldColors = fieldColors,
+            viewModel = viewModel
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -333,31 +278,25 @@ fun ReportScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            key("location") {
-                OutlinedTextField(
-                    value = state.locationText,
-                    onValueChange = viewModel::updateLocationText,
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("¿Dónde fue visto?") },
-                    leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray) },
-                    trailingIcon = {
-                        if (state.isLocationLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = orangePaw
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = orangePaw,
-                        unfocusedContainerColor = Color.White,
-                        focusedContainerColor = Color.White
-                    ),
-                    singleLine = true
-                )
-            }
+            OutlinedTextField(
+                value = locationText,
+                onValueChange = { locationText = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("¿Dónde fue visto?") },
+                leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray) },
+                trailingIcon = {
+                    if (state.isLocationLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = orangePaw
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = fieldColors,
+                singleLine = true
+            )
             Spacer(modifier = Modifier.width(12.dp))
 
             IconButton(
@@ -385,44 +324,38 @@ fun ReportScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            key("color") {
-                OutlinedTextField(
-                    value = state.colorText,
-                    onValueChange = viewModel::updateColorText,
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Color principal") },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White),
-                    singleLine = true
-                )
-            }
-            key("size") {
-                OutlinedTextField(
-                    value = state.sizeText,
-                    onValueChange = viewModel::updateSizeText,
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Tamaño aprox.") },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White),
-                    singleLine = true
-                )
-            }
+            OutlinedTextField(
+                value = colorText,
+                onValueChange = { colorText = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("Color principal") },
+                shape = RoundedCornerShape(16.dp),
+                colors = fieldColors,
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = sizeText,
+                onValueChange = { sizeText = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("Tamaño aprox.") },
+                shape = RoundedCornerShape(16.dp),
+                colors = fieldColors,
+                singleLine = true
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        key("details") {
-            OutlinedTextField(
-                value = state.detailsText,
-                onValueChange = viewModel::updateDetailsText,
-                modifier = Modifier.fillMaxWidth().height(120.dp),
-                label = { Text("Detalles adicionales") },
-                placeholder = { Text("Llevaba un collar azul, está asustado...") },
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = orangePaw, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White),
-                maxLines = 5
-            )
-        }
+        OutlinedTextField(
+            value = detailsText,
+            onValueChange = { detailsText = it },
+            modifier = Modifier.fillMaxWidth().height(120.dp),
+            label = { Text("Detalles adicionales") },
+            placeholder = { Text("Llevaba un collar azul, está asustado...") },
+            shape = RoundedCornerShape(16.dp),
+            colors = fieldColors,
+            maxLines = 5
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -437,7 +370,16 @@ fun ReportScreen(
 
         Button(
             onClick = {
-                viewModel.proceedToMatch {
+                viewModel.proceedToMatch(
+                    ReportFormInput(
+                        nameText = nameText,
+                        breedText = breedText,
+                        locationText = locationText,
+                        colorText = colorText,
+                        sizeText = sizeText,
+                        detailsText = detailsText
+                    )
+                ) {
                     navController.navigate("match_screen")
                 }
             },
@@ -458,7 +400,104 @@ fun ReportScreen(
     }
 }
 
-// --- FUNCIONES AUXILIARES INTACTAS ---
+@Composable
+private fun BreedFieldWithAutocomplete(
+    breedText: String,
+    onBreedTextChange: (String) -> Unit,
+    fieldColors: TextFieldColors,
+    viewModel: ReportViewModel
+) {
+    var breedFocused by remember { mutableStateOf(false) }
+
+    Text("Raza", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 4.dp))
+    Text(
+        text = "Empezá a escribir para ver sugerencias",
+        color = Color.Gray,
+        fontSize = 12.sp,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+
+    OutlinedTextField(
+        value = breedText,
+        onValueChange = onBreedTextChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { breedFocused = it.isFocused },
+        placeholder = { Text("Ej: escribí Gold…") },
+        shape = RoundedCornerShape(16.dp),
+        colors = fieldColors,
+        singleLine = true
+    )
+
+    if (breedFocused) {
+        BreedAutocompleteList(
+            query = breedText,
+            onSelect = onBreedTextChange,
+            viewModel = viewModel
+        )
+    }
+}
+
+/** Solo este composable observa la API de razas → no recomponé el TextField al cargar. */
+@Composable
+private fun BreedAutocompleteList(
+    query: String,
+    onSelect: (String) -> Unit,
+    viewModel: ReportViewModel
+) {
+    val breeds by viewModel.breeds.collectAsState()
+
+    val suggestions = remember(query, breeds) {
+        if (query.isBlank()) {
+            breeds.take(6)
+        } else {
+            breeds.filter { it.name.contains(query, ignoreCase = true) }.take(8)
+        }
+    }
+
+    if (suggestions.isEmpty()) {
+        if (query.isNotBlank()) {
+            Text(
+                text = "Sin coincidencias para \"$query\"",
+                color = Color.Gray,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+        return
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        shadowElevation = 4.dp,
+        color = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .heightIn(max = 220.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            suggestions.forEachIndexed { index, breed ->
+                Text(
+                    text = breed.name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelect(breed.name) }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    fontSize = 15.sp,
+                    color = Color.Black
+                )
+                if (index < suggestions.lastIndex) {
+                    HorizontalDivider(color = Color(0xFFEEEEEE))
+                }
+            }
+        }
+    }
+}
+
 fun crearUriTemporal(context: Context): Uri {
     val directory = File(context.cacheDir, "camera_images")
     if (!directory.exists()) directory.mkdirs()
