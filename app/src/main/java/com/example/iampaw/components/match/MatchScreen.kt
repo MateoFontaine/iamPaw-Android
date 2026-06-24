@@ -148,41 +148,79 @@ fun MatchResultsList(
     ) {
         state.errorMessage?.let { error ->
             item(key = "match_error") {
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 14.sp
-                )
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.retryAnalysis() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isScanning
+                        ) {
+                            Text("Reintentar con Gemini")
+                        }
+                    }
+                }
             }
         }
 
-        if (state.aiAnalysis.isNotBlank()) {
-            item(key = "ai_analysis") {
+        if (state.analysisSource == MatchAnalysisSource.LOCAL_OFFLINE && state.errorMessage == null) {
+            item(key = "offline_notice") {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
-                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFECEFF1)),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Icon(Icons.Outlined.AutoAwesome, contentDescription = "IA", tint = color)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                "Análisis iamPaw AI",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = Color(0xFFE65100)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                state.aiAnalysis,
-                                fontSize = 13.sp,
-                                color = Color.DarkGray,
-                                lineHeight = 18.sp
-                            )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Sin WiFi ni datos — coincidencias por análisis técnico local (raza, zona, formulario).",
+                            color = Color(0xFF455A64),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.retryAnalysis() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isScanning
+                        ) {
+                            Text("Reintentar con Gemini")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (state.analysisSource == MatchAnalysisSource.LOCAL_GEMINI_FAILED && state.errorMessage == null) {
+            item(key = "fallback_notice") {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Gemini no respondió — mostramos coincidencias en modo respaldo local.",
+                            color = Color(0xFFE65100),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.retryAnalysis() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isScanning
+                        ) {
+                            Text("Reintentar con Gemini")
                         }
                     }
                 }
@@ -191,8 +229,12 @@ fun MatchResultsList(
 
         item(key = "match_intro") {
             val intro = when {
+                state.matches.isNotEmpty() && state.analysisSource == MatchAnalysisSource.LOCAL_OFFLINE ->
+                    "Coincidencias sugeridas por análisis técnico local (sin red). Conectate y tocá «Reintentar con Gemini»:"
+                state.matches.isNotEmpty() && state.analysisSource == MatchAnalysisSource.LOCAL_GEMINI_FAILED ->
+                    "Coincidencias sugeridas en modo respaldo (Gemini no respondió). Revisá o reintentá:"
                 state.matches.isNotEmpty() ->
-                    "La IA detectó reportes activos cerca de $locationLabel con alta tasa de similitud visual:"
+                    "Encontramos reportes activos cerca de $locationLabel que podrían coincidir:"
                 state.candidatesEmptyMessage != null -> state.candidatesEmptyMessage
                 else -> "No se encontraron coincidencias claras con reportes existentes en $locationLabel."
             }
