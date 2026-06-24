@@ -66,8 +66,18 @@ class PawRepository @Inject constructor(
     override suspend fun syncReportsFromFirestore() {
         try {
             val remoteReports = firestoreDataSource.fetchAllReports()
+            val remoteIds = remoteReports.map { it.id }.toSet()
+
             if (remoteReports.isNotEmpty()) {
                 pawDao.insertAll(remoteReports)
+            }
+
+            // Solo reportes de usuario/Firestore (userId != ""). Los mock seed quedan.
+            val idsToDelete = pawDao.getSyncedReportIds().filter { it !in remoteIds }
+            if (idsToDelete.isNotEmpty()) {
+                idsToDelete.forEach { reportImageStorage.deleteReportImage(it) }
+                pawDao.deleteByIds(idsToDelete)
+                Log.d(TAG, "Removed ${idsToDelete.size} local report(s) no longer in Firestore")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Firestore sync failed, using local data: ${e.message}")

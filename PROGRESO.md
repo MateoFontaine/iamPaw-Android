@@ -13,6 +13,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Capa `domain/` | ✅ Hecho | Interfaz `IPawRepository` |
 | Room (offline-first) | ✅ Hecho | Feed observa Room con Flow |
 | Firestore | ✅ Hecho | Sync remota de reportes con Room |
+| Room sync deletes | ✅ Hecho | Borra local si ya no está en Firestore |
 | Tests (MockK) | ✅ Hecho | FeedViewModel + LoginViewModel (5 tests JVM) |
 | collectAsStateWithLifecycle | ✅ Hecho | 6 pantallas Compose (PR `feature/lifecycle-state`) |
 | Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
@@ -30,8 +31,9 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | 23/06 | `feature/firestore-sync` | Firestore: saveReport + syncReportsFromFirestore. ReportScreen publica al Feed. |
 | 23/06 | `feature/tests-unitarios` | Tests unitarios: FakePawRepository, FeedViewModelTest, LoginViewModelTest. |
 | 23/06 | `feature/lifecycle-state` | `collectAsStateWithLifecycle` en Feed, Login, Detail, Match, Profile, Report. |
+| 23/06 | `feature/room-sync-deletes` | Sync borra en Room reportes eliminados de Firestore (mock seed intacto). |
 
-**Rama actual:** `feature/lifecycle-state`
+**Rama actual:** `feature/room-sync-deletes`
 
 **PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
 
@@ -268,6 +270,39 @@ Sync Gradle → Run app → navegar pantallas; comportamiento visual igual al an
 
 ---
 
+## 6. Room sync deletes — ✅ Hecho
+
+**Rama:** `feature/room-sync-deletes` (desde `develop`)
+
+### Problema
+
+Borrar documentos en Firebase Console no los sacaba del feed: `syncReportsFromFirestore()` solo hacía `insertAll`, nunca `delete`.
+
+### Solución
+
+Al sincronizar:
+1. Traer todos los reportes de Firestore
+2. Insertar/actualizar en Room (`REPLACE`)
+3. Borrar de Room los que tienen `userId` (reportes de usuario) y ya no están en Firestore
+4. **No tocar** mock seed (Rocco, Luna, Milo → `userId` vacío)
+
+### Archivos
+
+```
+data/local/IPawDao.kt           → getSyncedReportIds(), deleteByIds()
+data/PawRepository.kt           → sync con purge
+data/local/ReportImageStorage.kt → deleteReportImage() al borrar
+```
+
+### Cómo testear
+
+1. Crear reporte → aparece en Feed y Firebase
+2. Borrar documento en Firebase Console
+3. Cerrar y abrir Feed (o reabrir app) → desaparece del celular
+4. Mock (Rocco, Luna, Milo) siguen si no están en Firebase
+
+---
+
 ## Orden recomendado hasta la entrega
 
 1. ✅ Hilt
@@ -275,7 +310,7 @@ Sync Gradle → Run app → navegar pantallas; comportamiento visual igual al an
 3. ✅ Firestore (reportes en la nube)
 4. ✅ Tests unitarios
 5. ✅ collectAsStateWithLifecycle
-6. ⬜ Room sync deletes (borrar local si no está en Firebase)
+6. ✅ Room sync deletes (borrar local si no está en Firebase)
 7. ⬜ Glide + Splash API
 8. ⬜ IA generativa (Gemini en Match)
 9. ⬜ Informe Android Profiler
