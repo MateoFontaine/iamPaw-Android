@@ -37,6 +37,7 @@ class FirestoreReportDataSource @Inject constructor(
                 imageUrl = doc.getString("imageUrl") ?: "",
                 status = doc.getString("status") ?: "",
                 userId = doc.getString("userId") ?: "",
+                contactPhone = doc.getString("contactPhone") ?: "",
                 createdAt = doc.getLong("createdAt") ?: 0L
             )
         }
@@ -55,6 +56,7 @@ class FirestoreReportDataSource @Inject constructor(
         "imageUrl" to imageUrl,
         "status" to status,
         "userId" to userId,
+        "contactPhone" to contactPhone,
         "createdAt" to createdAt
     )
 }

@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +25,26 @@ class DetailViewModel @Inject constructor(
 
     init {
         loadDogDetails()
+    }
+
+    fun markAsResolved(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isResolving = true, resolveError = null) }
+            repository.markReportResolved(postId)
+                .onSuccess {
+                    loadDogDetails()
+                    _uiState.update { it.copy(isResolving = false) }
+                    onSuccess()
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isResolving = false,
+                            resolveError = error.message ?: "No se pudo marcar como resuelto"
+                        )
+                    }
+                }
+        }
     }
 
     private fun loadDogDetails() {

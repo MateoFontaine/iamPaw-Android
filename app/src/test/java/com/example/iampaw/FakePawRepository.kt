@@ -27,6 +27,8 @@ class FakePawRepository(
 
     override suspend fun getDogDetail(id: String) = DetailState()
 
+    override suspend fun markReportResolved(reportId: String) = Result.success(Unit)
+
     override fun getMatchedDogs() = emptyList<MatchedDog>()
 
     override suspend fun getMatchCandidates(draft: ReportDraft): List<DogPost> {
@@ -39,4 +41,8 @@ class FakePawRepository(
     }
 
     override suspend fun getBreeds() = emptyList<DogBreed>()
+
+    override suspend fun getUserContactPhone() = ""
+
+    override suspend fun saveUserContactPhone(phone: String) = Result.success(Unit)
 }
