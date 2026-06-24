@@ -71,6 +71,8 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(platform(libs.firebase.bom))
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("com.google.android.gms:play-services-auth:21.1.1")
     implementation(libs.glide.compose)
     implementation("io.coil-kt:coil-compose:2.5.0")

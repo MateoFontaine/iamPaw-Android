@@ -12,7 +12,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Hilt (DI) | ✅ Hecho | Pusheado en `feature/inyeccion-dependencias` |
 | Capa `domain/` | ✅ Hecho | Interfaz `IPawRepository` |
 | Room (offline-first) | ✅ Hecho | Feed observa Room con Flow |
-| Firestore | ⬜ Pendiente | Sync remota de reportes |
+| Firestore | ✅ Hecho | Sync remota de reportes con Room |
 | Tests (MockK) | ⬜ Pendiente | ViewModels + Repository (Hilt lo facilita) |
 | Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
 | IA generativa | ⬜ Pendiente | Match / Report |
@@ -26,8 +26,9 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 |-------|------|-------------|
 | 20/06 | `feature/inyeccion-dependencias` | Hilt completo + fix AGP 9/KSP. Compila ✅. Push a origin. |
 | 20/06 | `feature/room-offline-first` | Room: Entity, Dao, Database, Feed offline-first. Pendiente: probar en device. |
+| 23/06 | `feature/firestore-sync` | Firestore: saveReport + syncReportsFromFirestore. ReportScreen publica al Feed. |
 
-**Rama actual:** `feature/room-offline-first`
+**Rama actual:** `feature/firestore-sync`
 
 **PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
 
@@ -50,7 +51,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
           │                         │
           │              ┌──────────┴──────────┐
           │              ▼                     ▼
-          │         Room (✅)            Firestore (⬜)
+          │         Room (✅)            Firestore (✅)
           │         SSOT local           sync remota
           │              ▲                     ▲
           │              └──────────┬──────────┘
@@ -153,11 +154,52 @@ FeedScreen → FeedViewModel → IPawRepository → IPawDao → Room (SQLite)
 
 ---
 
-## 3. Firestore — ⬜ SIGUIENTE
+## 3. Firestore — ✅ Hecho
 
 **Objetivo:** reportes de usuarios persisten en la nube y sincronizan con Room.
 
-**Flujo:** Usuario crea reporte → Room (inmediato) → Firestore (background)
+**Flujo:** Usuario crea reporte → Room (inmediato) → Firestore (background). Al abrir Feed → sync Firestore → Room.
+
+### Checklist
+
+- [x] Dependencia `firebase-firestore` + `kotlinx-coroutines-play-services`
+- [x] `provideFirestore()` en `dataModules.kt`
+- [x] `PetReportLocal` con `userId` + `createdAt` (DB v2, destructive migration)
+- [x] `FirestoreReportDataSource.kt` — colección `reports`
+- [x] `IPawRepository.saveReport()` + `syncReportsFromFirestore()`
+- [x] `PawRepository` — Room primero, Firestore en background (errores no crashean)
+- [x] `ReportViewModel.submitReport()` + botón en `ReportScreen`
+- [x] `FeedViewModel` llama sync al iniciar
+- [ ] Probar sync entre dos dispositivos con misma cuenta
+
+### Archivos principales
+
+```
+data/remote/FirestoreReportDataSource.kt  → CRUD colección reports
+data/PawRepository.kt                     → saveReport + sync
+domain/IPawRepository.kt                  → contrato extendido
+components/report/ReportViewModel.kt      → submitReport()
+components/feed/FeedViewModel.kt          → sync al abrir feed
+```
+
+### Cómo testear vos
+
+1. **Sync Gradle** → Run app → login con Google
+2. **Crear reporte:** ReportScreen → completar raza + ubicación → Publicar → aparece en Feed
+3. **Firestore Console:** ver documento en colección `reports`
+4. **Segundo dispositivo/emulador:** misma cuenta → abrir Feed → sync trae reportes
+5. **Offline:** modo avión → Feed sigue mostrando Room → al volver internet, sync actualiza
+
+### Flujo de datos (post-Firestore)
+
+```
+ReportScreen → ReportViewModel → saveReport()
+                                    ├── IPawDao.insert (inmediato)
+                                    └── FirestoreReportDataSource.save (background)
+
+FeedViewModel → syncReportsFromFirestore()
+                    └── Firestore → IPawDao.insertAll → UI observa Flow
+```
 
 ---
 
@@ -176,7 +218,7 @@ Patrón del demo (clase 13):
 
 1. ✅ Hilt
 2. ✅ Room (feed offline-first)
-3. ⬜ Firestore (reportes en la nube)
+3. ✅ Firestore (reportes en la nube)
 4. ⬜ Tests unitarios
 5. ⬜ Glide + Splash API + `collectAsStateWithLifecycle`
 6. ⬜ IA generativa (Gemini en Match)
@@ -184,20 +226,12 @@ Patrón del demo (clase 13):
 
 ---
 
-## Arquitectura actual (post-Room)
+## Arquitectura actual (post-Firestore)
 
 ```
 FeedViewModel  →  IPawRepository  →  PawRepository
-                                         ├── IPawDao (Room) ← Feed observa Flow
+                                         ├── IPawDao (Room) ← UI observa Flow
+                                         ├── FirestoreReportDataSource → sync
                                          ├── PawMockDataSource (seed + detalle/match)
                                          └── PawApiDataSource (razas — The Dog API)
-```
-
-**Arquitectura objetivo (post-Firestore):**
-
-```
-FeedViewModel  →  IPawRepository  →  PawRepository
-                                         ├── IPawDao (Room) ← UI observa esto
-                                         ├── FirestoreDataSource → sync con Room
-                                         └── PawApiDataSource → razas en Room
 ```
