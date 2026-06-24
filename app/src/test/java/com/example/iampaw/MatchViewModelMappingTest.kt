@@ -1,8 +1,7 @@
 package com.example.iampaw
 
 import com.example.iampaw.components.feed.DogPost
-import com.example.iampaw.components.match.MatchViewModel
-import com.example.iampaw.components.match.MatchedDog
+import com.example.iampaw.components.match.MatchCandidateMapper
 import com.example.iampaw.data.ai.ScoredMatch
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -21,7 +20,7 @@ class MatchViewModelMappingTest {
             ScoredMatch(postId = "id-2", matchPercentage = 91, reason = "Misma zona")
         )
 
-        val result = MatchViewModel.mapScoredMatches(scored, candidates)
+        val result = MatchCandidateMapper.mapScoredMatches(scored, candidates)
 
         assertEquals(2, result.size)
         assertEquals("id-2", result[0].postId)
@@ -31,13 +30,27 @@ class MatchViewModelMappingTest {
     }
 
     @Test
-    fun `ignora postId desconocidos`() {
+    fun `fallback con un solo candidato aunque postId sea invalido`() {
         val scored = listOf(
-            ScoredMatch(postId = "id-999", matchPercentage = 50, reason = "X")
+            ScoredMatch(postId = "id-999", matchPercentage = 88, reason = "Muy similar")
         )
 
-        val result = MatchViewModel.mapScoredMatches(scored, candidates)
+        val result = MatchCandidateMapper.mapScoredMatches(scored, listOf(candidates[0]))
 
-        assertEquals(0, result.size)
+        assertEquals(1, result.size)
+        assertEquals("id-1", result[0].postId)
+        assertEquals(88, result[0].matchPercentage)
+    }
+
+    @Test
+    fun `resuelve candidato por nombre si Gemini manda el nombre`() {
+        val scored = listOf(
+            ScoredMatch(postId = "Luna", matchPercentage = 75, reason = "Misma raza")
+        )
+
+        val result = MatchCandidateMapper.mapScoredMatches(scored, candidates)
+
+        assertEquals(1, result.size)
+        assertEquals("id-1", result[0].postId)
     }
 }

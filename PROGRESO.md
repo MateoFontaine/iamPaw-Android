@@ -17,7 +17,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Tests (MockK) | ✅ Hecho | FeedViewModel + LoginViewModel (5 tests JVM) |
 | collectAsStateWithLifecycle | ✅ Hecho | 6 pantallas Compose (PR `feature/lifecycle-state`) |
 | Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
-| IA generativa | ⬜ Pendiente | Match / Report |
+| IA generativa | ✅ Hecho | Gemini REST en Match (foto + candidatos), `aiAnalysis` al publicar |
 | Android Profiler | ⬜ Pendiente | Informe técnico |
 
 ---
@@ -32,8 +32,9 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | 23/06 | `feature/tests-unitarios` | Tests unitarios: FakePawRepository, FeedViewModelTest, LoginViewModelTest. |
 | 23/06 | `feature/lifecycle-state` | `collectAsStateWithLifecycle` en Feed, Login, Detail, Match, Profile, Report. |
 | 23/06 | `feature/room-sync-deletes` | Sync borra en Room reportes eliminados de Firestore (mock seed intacto). |
+| 24/06 | `feature/gemini-match` | Fases 0–2: datos reales, Gemini REST (multimodal), Match con % real, fallback offline. |
 
-**Rama actual:** `feature/room-sync-deletes`
+**Rama actual:** `feature/gemini-match`
 
 **PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
 
@@ -311,8 +312,8 @@ data/local/ReportImageStorage.kt → deleteReportImage() al borrar
 4. ✅ Tests unitarios
 5. ✅ collectAsStateWithLifecycle
 6. ✅ Room sync deletes (borrar local si no está en Firebase)
-7. ⬜ Glide + Splash API
-8. ⬜ IA generativa (Gemini en Match)
+7. ✅ IA generativa (Gemini en Match — REST, modelos 2.5/3.x)
+8. ⬜ Glide + Splash API
 9. ⬜ Informe Android Profiler
 
 ---
@@ -323,6 +324,6 @@ data/local/ReportImageStorage.kt → deleteReportImage() al borrar
 FeedViewModel  →  IPawRepository  →  PawRepository
                                          ├── IPawDao (Room) ← UI observa Flow
                                          ├── FirestoreReportDataSource → sync
-                                         ├── PawMockDataSource (seed + detalle/match)
+                                         ├── GeminiMatchAnalyzer (REST) → Match
                                          └── PawApiDataSource (razas — The Dog API)
 ```

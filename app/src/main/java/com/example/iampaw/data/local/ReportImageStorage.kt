@@ -53,6 +53,28 @@ class ReportImageStorage @Inject constructor(
         File(imagesDir, "$reportId.jpg").delete()
     }
 
+    /** Lee bytes + MIME para enviar a Gemini (content://, file:// o path absoluto). */
+    fun readImageForGemini(storedPath: String): GeminiImagePayload? {
+        val bytes = readImageBytes(storedPath) ?: return null
+        return GeminiImagePayload(bytes = bytes, mimeType = guessMimeType(storedPath))
+    }
+
+    private fun guessMimeType(storedPath: String): String {
+        val lower = storedPath.lowercase()
+        return when {
+            lower.endsWith(".png") -> "image/png"
+            lower.endsWith(".webp") -> "image/webp"
+            lower.endsWith(".heic") || lower.endsWith(".heif") -> "image/heic"
+            else -> {
+                if (storedPath.startsWith("content:")) {
+                    context.contentResolver.getType(Uri.parse(storedPath)) ?: "image/jpeg"
+                } else {
+                    "image/jpeg"
+                }
+            }
+        }
+    }
+
     /** Lee bytes de una imagen local (content://, file:// o path absoluto). */
     fun readImageBytes(storedPath: String): ByteArray? {
         if (storedPath.isBlank() || storedPath.startsWith("http")) return null

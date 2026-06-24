@@ -4,18 +4,20 @@ import android.util.Log
 import com.example.iampaw.BuildConfig
 import com.example.iampaw.components.feed.DogPost
 import com.example.iampaw.components.report.ReportDraft
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.content
+import com.example.iampaw.data.local.GeminiImagePayload
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class GeminiMatchAnalyzer @Inject constructor() {
+class GeminiMatchAnalyzer @Inject constructor(
+    private val restClient: GeminiRestClient
+) {
 
     suspend fun analyzeReport(
         draft: ReportDraft,
         candidates: List<DogPost>,
-        imageBytes: ByteArray?
+        image: GeminiImagePayload?
     ): Result<GeminiMatchResult> {
         val apiKey = BuildConfig.GEMINI_API_KEY.trim()
         if (apiKey.isBlank()) {
@@ -23,24 +25,51 @@ class GeminiMatchAnalyzer @Inject constructor() {
             return Result.failure(IllegalStateException("API key de Gemini no configurada"))
         }
 
-        return try {
-            val model = GenerativeModel(modelName = MODEL_NAME, apiKey = apiKey)
-            val prompt = buildPrompt(draft, candidates)
-            val bytes = imageBytes
-            val input = content {
-                if (bytes != null && bytes.isNotEmpty()) {
-                    blob("image/jpeg", bytes)
+        val preparedImage = image?.let { GeminiImagePreparer.prepare(it.bytes, it.mimeType) }
+        val prompt = buildPrompt(draft, candidates)
+        val triedModels = mutableListOf<String>()
+        var lastError: Exception? = null
+
+        for (modelName in MODEL_FALLBACK_CHAIN) {
+            repeat(MAX_ATTEMPTS_PER_MODEL) { attempt ->
+                if (attempt > 0) delay(RETRY_DELAY_MS)
+                triedModels += modelName
+                try {
+                    Log.d(
+                        TAG,
+                        "REST $modelName intento ${attempt + 1}/$MAX_ATTEMPTS_PER_MODEL, " +
+                            "img=${preparedImage?.bytes?.size ?: 0} bytes"
+                    )
+                    val rawText = restClient.generateContent(
+                        modelName = modelName,
+                        apiKey = apiKey,
+                        prompt = prompt,
+                        image = preparedImage
+                    )
+                    Log.d(TAG, "OK con $modelName (${rawText.length} chars)")
+                    val parseResult = GeminiResponseParser.parse(rawText)
+                    if (parseResult.isSuccess) return parseResult
+                    lastError = parseResult.exceptionOrNull() as? Exception
+                        ?: IllegalStateException("No se pudo parsear la respuesta de Gemini")
+                    Log.w(TAG, "Parse falló con $modelName: ${lastError?.message}")
+                } catch (e: Exception) {
+                    lastError = e
+                    Log.w(TAG, "$modelName falló: ${e.message}")
+                    if (!GeminiErrorMapper.isRetryable(e) && !isModelNotFound(e)) {
+                        break
+                    }
                 }
-                text(prompt)
             }
-            val response = model.generateContent(input)
-            val rawText = response.text.orEmpty()
-            Log.d(TAG, "Gemini respondió (${rawText.length} chars)")
-            GeminiResponseParser.parse(rawText)
-        } catch (e: Exception) {
-            Log.e(TAG, "Gemini analyzeReport falló: ${e.message}", e)
-            Result.failure(e)
         }
+
+        val error = lastError ?: IllegalStateException("Error desconocido de Gemini")
+        val detail = "${GeminiErrorMapper.toUserMessage(error)} Modelos probados: ${triedModels.distinct().joinToString()}"
+        return Result.failure(IllegalStateException(detail, error))
+    }
+
+    private fun isModelNotFound(error: Exception): Boolean {
+        val raw = error.message.orEmpty()
+        return raw.contains("404") || raw.contains("not found", ignoreCase = true)
     }
 
     private fun buildPrompt(draft: ReportDraft, candidates: List<DogPost>): String {
@@ -68,11 +97,18 @@ class GeminiMatchAnalyzer @Inject constructor() {
             Analizá la imagen adjunta (si hay) y compará con estos reportes existentes:
             $candidatesBlock
 
-            Respondé SOLO JSON válido, sin markdown ni texto extra:
+            Criterios para matchPercentage (mismo perro = score alto):
+            - 85-95: misma raza, color y rasgos visuales principales (muy probable que sea el mismo perro).
+            - 70-84: similitud fuerte; diferencias menores (collar, chapita, ángulo de foto, patas no visibles).
+            - Menos de 60: solo si claramente parecen perros distintos.
+            - Collares y accesorios pueden cambiar entre reportes; no penalices fuerte solo por eso.
+
+            Respondé SOLO JSON válido, sin markdown ni texto extra.
+            En matches[].postId usá EXACTAMENTE el valor id= de cada candidato (UUID), sin inventar ids.
             {
               "aiAnalysis": "descripción visual + observaciones (mencionar si difiere de lo reportado)",
               "matches": [
-                { "postId": "id_del_candidato", "matchPercentage": 87, "reason": "motivo breve" }
+                { "postId": "uuid_exacto_del_candidato", "matchPercentage": 87, "reason": "motivo breve" }
               ]
             }
         """.trimIndent()
@@ -80,6 +116,15 @@ class GeminiMatchAnalyzer @Inject constructor() {
 
     companion object {
         private const val TAG = "GeminiMatchAnalyzer"
-        private const val MODEL_NAME = "gemini-2.0-flash"
+        private const val RETRY_DELAY_MS = 2_000L
+        private const val MAX_ATTEMPTS_PER_MODEL = 2
+        /** Modelos disponibles con keys AQ. en junio 2026 (1.5 ya no existe → 404). */
+        val MODEL_FALLBACK_CHAIN = listOf(
+            "gemini-2.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-2.5-flash",
+            "gemini-flash-latest"
+        )
     }
 }
