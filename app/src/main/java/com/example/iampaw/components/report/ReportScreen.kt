@@ -37,7 +37,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import com.example.iampaw.components.commons.ReportGlideImage
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -240,7 +240,7 @@ fun ReportScreen(
                     Text("Soporta Cámara, JPG, PNG", fontSize = 12.sp, color = Color.Gray)
                 }
             } else {
-                AsyncImage(
+                ReportGlideImage(
                     model = state.imageUri,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),

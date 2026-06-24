@@ -55,6 +55,7 @@ android {
 dependencies {
     // --- LIBRERÍAS BASE DE ANDROID Y COMPOSE ---
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
@@ -77,8 +78,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("com.google.android.gms:play-services-auth:21.1.1")
+    implementation(libs.glide)
     implementation(libs.glide.compose)
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    ksp(libs.glide.compiler)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.gms:play-services-location:21.2.0")
 
