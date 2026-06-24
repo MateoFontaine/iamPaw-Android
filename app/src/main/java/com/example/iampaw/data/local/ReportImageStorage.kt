@@ -48,6 +48,11 @@ class ReportImageStorage @Inject constructor(
         }
     }
 
+    /** Elimina la imagen local asociada a un reporte (si existe). */
+    fun deleteReportImage(reportId: String) {
+        File(imagesDir, "$reportId.jpg").delete()
+    }
+
     /** Coil puede cargar File, http o content. */
     fun modelForDisplay(storedPath: String): Any? = when {
         storedPath.isBlank() -> null
