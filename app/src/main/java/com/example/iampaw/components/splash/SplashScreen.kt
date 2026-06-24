@@ -21,6 +21,8 @@ import kotlinx.coroutines.delay // Requisito para pausar el tiempo
 
 @Composable
 fun SplashScreen(navController: NavController) {
+    // Splash Screen API (sistema) ya mostró el branding al abrir la app.
+    // Esta pantalla Compose mantiene la transición a Login.
 
     val interFamily = FontFamily(
         Font(R.font.inter_extrabold, FontWeight.ExtraBold)

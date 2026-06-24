@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
+import com.example.iampaw.components.commons.ReportGlideImage
 import com.example.iampaw.components.commons.reportImageModel
 
 @Composable
@@ -314,7 +314,7 @@ fun MatchCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
+            ReportGlideImage(
                 model = reportImageModel(matchedDog.imageUrl),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),

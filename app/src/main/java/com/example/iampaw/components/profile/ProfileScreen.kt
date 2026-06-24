@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import com.example.iampaw.components.commons.ReportGlideImage
 import com.example.iampaw.components.Screen
 
 @Composable
@@ -105,7 +105,7 @@ fun ProfileScreen(
                     shape = CircleShape,
                     color = Color.LightGray
                 ) {
-                    AsyncImage(
+                    ReportGlideImage(
                         model = state.photoUrl ?: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
                         contentDescription = "Foto de perfil",
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
