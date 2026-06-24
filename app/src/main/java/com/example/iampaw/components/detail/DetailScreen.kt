@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import com.example.iampaw.components.commons.ReportGlideImage
 import com.example.iampaw.components.commons.reportImageModel
 import com.example.iampaw.data.ContactPhoneFormatter
 
@@ -88,7 +88,7 @@ fun DetailScreen(
                 .fillMaxWidth()
                 .height(380.dp)
         ) {
-            AsyncImage(
+            ReportGlideImage(
                 model = reportImageModel(state.imageUrl),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),

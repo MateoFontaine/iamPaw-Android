@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import com.example.iampaw.components.commons.ReportGlideImage
 import com.example.iampaw.components.commons.reportImageModel
 import com.example.iampaw.components.Screen
 
@@ -302,7 +302,7 @@ fun DogImmersiveCard(post: DogPost, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
+            ReportGlideImage(
                 model = reportImageModel(post.imageUrl),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
