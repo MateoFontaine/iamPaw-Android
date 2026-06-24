@@ -14,10 +14,11 @@ fun PetReportLocal.toDogPost() = DogPost(
     color = color,
     size = size,
     details = details,
-    aiAnalysis = aiAnalysis
+    aiAnalysis = aiAnalysis,
+    contactPhone = contactPhone
 )
 
-fun DogPost.toLocal(userId: String = "", createdAt: Long = 0L) = PetReportLocal(
+fun DogPost.toLocal(userId: String = "", createdAt: Long = 0L, contactPhone: String = "") = PetReportLocal(
     id = id,
     name = name,
     breed = breed,
@@ -30,10 +31,12 @@ fun DogPost.toLocal(userId: String = "", createdAt: Long = 0L) = PetReportLocal(
     imageUrl = imageUrl,
     status = status,
     userId = userId,
+    contactPhone = contactPhone,
     createdAt = createdAt
 )
 
-fun PetReportLocal.toDetailState() = DetailState(
+fun PetReportLocal.toDetailState(isOwner: Boolean = false) = DetailState(
+    postId = id,
     name = name,
     breed = breed,
     location = location,
@@ -42,7 +45,11 @@ fun PetReportLocal.toDetailState() = DetailState(
     size = size,
     description = details,
     aiAnalysis = aiAnalysis,
-    isLost = status.contains("Perdido", ignoreCase = true)
+    status = status,
+    contactPhone = contactPhone,
+    isLost = status.contains("Perdido", ignoreCase = true),
+    isResolved = status.contains("Resuelto", ignoreCase = true),
+    isOwner = isOwner
 )
 
 fun List<PetReportLocal>.toDogPosts() = map { it.toDogPost() }

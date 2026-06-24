@@ -17,5 +17,6 @@ data class PetReportLocal(
     val imageUrl: String,
     val status: String,
     val userId: String = "",
+    val contactPhone: String = "",
     val createdAt: Long = 0L
 )

@@ -11,7 +11,8 @@ data class DogPost(
     val color: String = "",
     val size: String = "",
     val details: String = "",
-    val aiAnalysis: String = ""
+    val aiAnalysis: String = "",
+    val contactPhone: String = ""
 )
 
 data class FeedState(

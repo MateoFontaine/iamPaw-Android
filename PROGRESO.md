@@ -33,6 +33,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | 23/06 | `feature/lifecycle-state` | `collectAsStateWithLifecycle` en Feed, Login, Detail, Match, Profile, Report. |
 | 23/06 | `feature/room-sync-deletes` | Sync borra en Room reportes eliminados de Firestore (mock seed intacto). |
 | 24/06 | `feature/gemini-match` | Fases 0–2: datos reales, Gemini REST (multimodal), Match con % real, fallback offline. |
+| 24/06 | `feature/gemini-match` | Marcar resuelto, teléfono en Perfil + WhatsApp real, backfill reportes viejos, `firestore.rules`. |
 
 **Rama actual:** `feature/gemini-match`
 

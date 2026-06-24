@@ -6,6 +6,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.*
@@ -23,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,7 +65,9 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
+                .padding(bottom = 120.dp)
         ) {
             // --- HEADER ---
             Row(
@@ -131,6 +137,78 @@ fun ProfileScreen(
             ) {
                 StatCard(modifier = Modifier.weight(1f), label = "Reportes", count = state.reportsCount, icon = Icons.Outlined.Pets)
                 StatCard(modifier = Modifier.weight(1f), label = "Ayudados", count = state.helpedCount, icon = Icons.Outlined.VolunteerActivism)
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                "Contacto",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Teléfono / WhatsApp",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        "Se guarda en tu perfil y se usa en todas tus publicaciones.",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = state.contactPhone,
+                        onValueChange = viewModel::onContactPhoneChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Ej: 11 2254 123456") },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.Phone, contentDescription = null, tint = orangePaw)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    state.phoneSaveMessage?.let { message ->
+                        Text(
+                            text = message,
+                            fontSize = 12.sp,
+                            color = if (message.contains("guardado", ignoreCase = true)) {
+                                Color(0xFF2E7D32)
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { viewModel.saveContactPhone() },
+                        enabled = !state.isSavingPhone && state.contactPhone.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = orangePaw)
+                    ) {
+                        if (state.isSavingPhone) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text("Guardar teléfono", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

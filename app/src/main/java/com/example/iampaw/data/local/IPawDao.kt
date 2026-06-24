@@ -32,6 +32,9 @@ interface IPawDao {
     @Query("SELECT * FROM pet_reports WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): PetReportLocal?
 
+    @Query("SELECT * FROM pet_reports WHERE userId = :userId")
+    suspend fun getByUserId(userId: String): List<PetReportLocal>
+
     @Query("SELECT id FROM pet_reports WHERE userId != ''")
     suspend fun getSyncedReportIds(): List<String>
 
