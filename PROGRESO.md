@@ -16,7 +16,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Room sync deletes | ✅ Hecho | Borra local si ya no está en Firestore |
 | Tests (MockK) | ✅ Hecho | FeedViewModel + LoginViewModel (5 tests JVM) |
 | collectAsStateWithLifecycle | ✅ Hecho | 6 pantallas Compose (PR `feature/lifecycle-state`) |
-| Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
+| Glide + Splash API | ✅ Hecho | Glide en feed/detalle/match/report/perfil; Splash Screen API en MainActivity |
 | IA generativa | ✅ Hecho | Gemini REST en Match (foto + candidatos), `aiAnalysis` al publicar |
 | Android Profiler | ⬜ Pendiente | Informe técnico |
 
@@ -34,8 +34,9 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | 23/06 | `feature/room-sync-deletes` | Sync borra en Room reportes eliminados de Firestore (mock seed intacto). |
 | 24/06 | `feature/gemini-match` | Fases 0–2: datos reales, Gemini REST (multimodal), Match con % real, fallback offline. |
 | 24/06 | `feature/gemini-match` | Marcar resuelto, teléfono en Perfil + WhatsApp real, backfill reportes viejos, `firestore.rules`. |
+| 24/06 | `feature/glide-splash` | Glide (reemplaza Coil) + Splash Screen API oficial. |
 
-**Rama actual:** `feature/gemini-match`
+**Rama actual:** `feature/glide-splash`
 
 **PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
 
@@ -314,7 +315,7 @@ data/local/ReportImageStorage.kt → deleteReportImage() al borrar
 5. ✅ collectAsStateWithLifecycle
 6. ✅ Room sync deletes (borrar local si no está en Firebase)
 7. ✅ IA generativa (Gemini en Match — REST, modelos 2.5/3.x)
-8. ⬜ Glide + Splash API
+8. ✅ Glide + Splash API
 9. ⬜ Informe Android Profiler
 
 ---
