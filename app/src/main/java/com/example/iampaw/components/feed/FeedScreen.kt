@@ -23,6 +23,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.commons.reportImageModel
@@ -34,7 +35,7 @@ fun FeedScreen(
     navController: NavController,
     feedViewModel: FeedViewModel = hiltViewModel()
 ) {
-    val state by feedViewModel.uiState.collectAsState()
+    val state by feedViewModel.uiState.collectAsStateWithLifecycle()
 
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
