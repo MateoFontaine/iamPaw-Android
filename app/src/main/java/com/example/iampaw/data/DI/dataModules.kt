@@ -7,6 +7,7 @@ import com.example.iampaw.data.local.IPawDao
 import com.example.iampaw.data.local.PawDatabase
 import com.example.iampaw.domain.IPawRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -35,6 +36,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 
     @Provides
     @Singleton

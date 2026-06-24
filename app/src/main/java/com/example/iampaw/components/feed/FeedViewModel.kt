@@ -28,6 +28,7 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.refreshFeedIfEmpty()
+                repository.syncReportsFromFirestore()
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
                 return@launch
