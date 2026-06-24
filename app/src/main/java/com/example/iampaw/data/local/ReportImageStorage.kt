@@ -53,6 +53,24 @@ class ReportImageStorage @Inject constructor(
         File(imagesDir, "$reportId.jpg").delete()
     }
 
+    /** Lee bytes de una imagen local (content://, file:// o path absoluto). */
+    fun readImageBytes(storedPath: String): ByteArray? {
+        if (storedPath.isBlank() || storedPath.startsWith("http")) return null
+        return try {
+            when {
+                storedPath.startsWith("content:") ->
+                    context.contentResolver.openInputStream(Uri.parse(storedPath))?.use { it.readBytes() }
+                storedPath.startsWith("file:") -> {
+                    val path = Uri.parse(storedPath).path ?: return null
+                    File(path).takeIf { it.exists() }?.readBytes()
+                }
+                else -> File(storedPath).takeIf { it.exists() }?.readBytes()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     /** Coil puede cargar File, http o content. */
     fun modelForDisplay(storedPath: String): Any? = when {
         storedPath.isBlank() -> null
