@@ -59,7 +59,10 @@ class MatchViewModel @Inject constructor(
                 location = draft.location,
                 time = "Recién",
                 imageUrl = draft.imageUrl,
-                status = draft.status
+                status = draft.status,
+                color = draft.colorText,
+                size = draft.sizeText,
+                details = draft.detailsText
             )
 
             repository.saveReport(report)

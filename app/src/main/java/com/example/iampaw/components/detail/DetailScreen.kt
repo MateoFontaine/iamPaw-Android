@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.iampaw.components.commons.reportImageModel
 
 @Composable
 fun DetailScreen(
@@ -54,7 +55,7 @@ fun DetailScreen(
                 .height(380.dp)
         ) {
             AsyncImage(
-                model = state.imageUrl,
+                model = reportImageModel(state.imageUrl),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -107,6 +108,18 @@ fun DetailScreen(
             Text(text = state.name, fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.Black)
             Text(text = state.breed, fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
 
+            if (state.color.isNotBlank() || state.size.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = listOfNotNull(
+                        state.color.takeIf { it.isNotBlank() },
+                        state.size.takeIf { it.isNotBlank() }
+                    ).joinToString(" • "),
+                    fontSize = 14.sp,
+                    color = Color.DarkGray
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // Ubicación Corta
@@ -118,39 +131,45 @@ fun DetailScreen(
 
             Divider(modifier = Modifier.padding(vertical = 20.dp), color = Color(0xFFEEEEEE))
 
-            // --- BLOQUE ANÁLISIS DE IA (EXIGIDO EN EL CU-05) ---
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
+            // --- BLOQUE ANÁLISIS DE IA ---
+            if (state.aiAnalysis.isNotBlank()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Outlined.AutoAwesome, contentDescription = "IA", tint = orangePaw)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Análisis de Rasgos por iamPaw AI", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFE65100))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(state.aiAnalysis, fontSize = 13.sp, color = Color.DarkGray, lineHeight = 18.sp)
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(Icons.Outlined.AutoAwesome, contentDescription = "IA", tint = orangePaw)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Análisis de Rasgos por iamPaw AI", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFE65100))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(state.aiAnalysis, fontSize = 13.sp, color = Color.DarkGray, lineHeight = 18.sp)
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
             // Descripción del usuario
-            Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-            Text(
-                text = state.description,
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 6.dp),
-                lineHeight = 20.sp
-            )
+            if (state.description.isNotBlank()) {
+                Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                Text(
+                    text = state.description,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 6.dp),
+                    lineHeight = 20.sp
+                )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // --- ACCIONES IMPLÍCITAS (INTENTS EXIGIDOS EN EL PDF) ---
             // Botón Google Maps
