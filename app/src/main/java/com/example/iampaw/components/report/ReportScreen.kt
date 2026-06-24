@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
@@ -50,7 +51,7 @@ fun ReportScreen(
     viewModel: ReportViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     var nameText by rememberSaveable { mutableStateOf("") }
     var breedText by rememberSaveable { mutableStateOf("") }
@@ -445,7 +446,7 @@ private fun BreedAutocompleteList(
     onSelect: (String) -> Unit,
     viewModel: ReportViewModel
 ) {
-    val breeds by viewModel.breeds.collectAsState()
+    val breeds by viewModel.breeds.collectAsStateWithLifecycle()
 
     val suggestions = remember(query, breeds) {
         if (query.isBlank()) {
