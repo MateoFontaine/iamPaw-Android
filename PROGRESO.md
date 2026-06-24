@@ -13,7 +13,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Capa `domain/` | ✅ Hecho | Interfaz `IPawRepository` |
 | Room (offline-first) | ✅ Hecho | Feed observa Room con Flow |
 | Firestore | ✅ Hecho | Sync remota de reportes con Room |
-| Tests (MockK) | ⬜ Pendiente | ViewModels + Repository (Hilt lo facilita) |
+| Tests (MockK) | ✅ Hecho | FeedViewModel + LoginViewModel (5 tests JVM) |
 | Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
 | IA generativa | ⬜ Pendiente | Match / Report |
 | Android Profiler | ⬜ Pendiente | Informe técnico |
@@ -27,8 +27,9 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | 20/06 | `feature/inyeccion-dependencias` | Hilt completo + fix AGP 9/KSP. Compila ✅. Push a origin. |
 | 20/06 | `feature/room-offline-first` | Room: Entity, Dao, Database, Feed offline-first. Pendiente: probar en device. |
 | 23/06 | `feature/firestore-sync` | Firestore: saveReport + syncReportsFromFirestore. ReportScreen publica al Feed. |
+| 23/06 | `feature/tests-unitarios` | Tests unitarios: FakePawRepository, FeedViewModelTest, LoginViewModelTest. |
 
-**Rama actual:** `feature/firestore-sync`
+**Rama actual:** `feature/tests-unitarios`
 
 **PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
 
@@ -59,7 +60,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
           └──────── observa ────────┘
                     Flow desde Room
 
-    Tests (⬜): FakePawRepository → ViewModel sin Android real
+    Tests (✅): FakePawRepository → ViewModel sin Android real
 ```
 
 ### ¿Para qué nos sirve Hilt? (resumen)
@@ -203,14 +204,45 @@ FeedViewModel → syncReportsFromFirestore()
 
 ---
 
-## 4. Tests — Pendiente
+## 4. Tests unitarios — ✅ Hecho
 
-**Depende de:** Hilt ✅ + Room ⬜
+**Rama:** `feature/tests-unitarios` (desde `feature/firestore-sync`)  
+**Depende de:** Hilt ✅ + Room ✅ + Firestore ✅
 
-Patrón del demo (clase 13):
-- `FakePawRepository` implementa `IPawRepository`
-- `FeedViewModelTest` con `StandardTestDispatcher` + `advanceUntilIdle()`
-- `LoginViewModelTest` con `mockk<FirebaseAuth>()`
+### Checklist
+
+- [x] Dependencias Gradle: MockK + kotlinx-coroutines-test
+- [x] `FakePawRepository` — implementa `IPawRepository` con datos inventados
+- [x] `FeedViewModelTest` — carga posts + error si sync falla
+- [x] `LoginViewModelTest` — `setLoading` + estado inicial
+- [x] Todos los tests pasan en JVM (sin emulador)
+
+### Archivos principales
+
+```
+app/src/test/java/com/example/iampaw/
+├── FakePawRepository.kt    → repo fake para tests
+├── FeedViewModelTest.kt      → 2 tests (feed + sync error)
+└── LoginViewModelTest.kt     → 3 tests (loading + estado inicial)
+```
+
+### Cómo correr
+
+1. Android Studio → abrir cualquier `*Test.kt` → ▶️ junto a la clase
+2. Terminal: `./gradlew testDebugUnitTest`
+3. Reporte HTML: `app/build/reports/tests/testDebugUnitTest/index.html`
+
+### Qué valida cada test
+
+| Test | Qué prueba |
+|------|------------|
+| `al iniciar carga posts del repositorio` | FeedViewModel carga posts del fake y apaga loading |
+| `si sync falla muestra error` | Si sync lanza excepción, `errorMessage` se setea |
+| `setLoading enciende la ruedita` | LoginViewModel pone `isLoading = true` |
+| `setLoading apaga la ruedita` | LoginViewModel pone `isLoading = false` |
+| `al iniciar no esta cargando ni logueado` | Estado inicial del login es correcto |
+
+> `signInWithFirebase` no se testea en JVM (callbacks Firebase + APIs Android). Se prueba manual en emulador.
 
 ---
 
@@ -219,7 +251,7 @@ Patrón del demo (clase 13):
 1. ✅ Hilt
 2. ✅ Room (feed offline-first)
 3. ✅ Firestore (reportes en la nube)
-4. ⬜ Tests unitarios
+4. ✅ Tests unitarios
 5. ⬜ Glide + Splash API + `collectAsStateWithLifecycle`
 6. ⬜ IA generativa (Gemini en Match)
 7. ⬜ Informe Android Profiler
