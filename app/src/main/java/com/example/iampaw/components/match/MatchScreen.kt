@@ -30,13 +30,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
+import com.example.iampaw.components.commons.reportImageModel
 
 @Composable
 fun MatchScreen(
     navController: NavController,
     viewModel: MatchViewModel = hiltViewModel()
 ) {
-    // Observamos el estado reactivo del ViewModel
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     val orangePaw = Color(0xFFFF9800)
@@ -49,7 +49,6 @@ fun MatchScreen(
             .statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- HEADER ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -147,29 +146,115 @@ fun MatchResultsList(
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
+        state.errorMessage?.let { error ->
+            item(key = "match_error") {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.retryAnalysis() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isScanning
+                        ) {
+                            Text("Reintentar con Gemini")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (state.analysisSource == MatchAnalysisSource.LOCAL_OFFLINE && state.errorMessage == null) {
+            item(key = "offline_notice") {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFECEFF1)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Sin WiFi ni datos — coincidencias por análisis técnico local (raza, zona, formulario).",
+                            color = Color(0xFF455A64),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.retryAnalysis() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isScanning
+                        ) {
+                            Text("Reintentar con Gemini")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (state.analysisSource == MatchAnalysisSource.LOCAL_GEMINI_FAILED && state.errorMessage == null) {
+            item(key = "fallback_notice") {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Gemini no respondió — mostramos coincidencias en modo respaldo local.",
+                            color = Color(0xFFE65100),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.retryAnalysis() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isScanning
+                        ) {
+                            Text("Reintentar con Gemini")
+                        }
+                    }
+                }
+            }
+        }
+
+        item(key = "match_intro") {
+            val intro = when {
+                state.matches.isNotEmpty() && state.analysisSource == MatchAnalysisSource.LOCAL_OFFLINE ->
+                    "Coincidencias sugeridas por análisis técnico local (sin red). Conectate y tocá «Reintentar con Gemini»:"
+                state.matches.isNotEmpty() && state.analysisSource == MatchAnalysisSource.LOCAL_GEMINI_FAILED ->
+                    "Coincidencias sugeridas en modo respaldo (Gemini no respondió). Revisá o reintentá:"
+                state.matches.isNotEmpty() ->
+                    "Encontramos reportes activos cerca de $locationLabel que podrían coincidir:"
+                state.candidatesEmptyMessage != null -> state.candidatesEmptyMessage
+                else -> "No se encontraron coincidencias claras con reportes existentes en $locationLabel."
+            }
             Text(
-                text = "La IA detectó reportes activos cerca de $locationLabel con alta tasa de similitud visual:",
+                text = intro,
                 color = Color.Gray,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
 
-        items(state.matches) { matchedDog ->
+        items(state.matches, key = { it.postId }) { matchedDog ->
             MatchCard(
-                name = matchedDog.name,
-                breed = matchedDog.breed,
-                location = matchedDog.location,
-                timeText = matchedDog.timeText,
-                matchPercentage = matchedDog.matchPercentage,
-                imageUrl = matchedDog.imageUrl,
+                matchedDog = matchedDog,
                 color = color,
                 navController = navController
             )
         }
 
-        item {
+        item(key = "publish_section") {
             Spacer(modifier = Modifier.height(16.dp))
 
             state.publishError?.let { error ->
@@ -214,28 +299,23 @@ fun MatchResultsList(
 
 @Composable
 fun MatchCard(
-    name: String,
-    breed: String,
-    location: String,
-    timeText: String,
-    matchPercentage: Int,
-    imageUrl: String,
+    matchedDog: MatchedDog,
     color: Color,
     navController: NavController
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(if (matchedDog.reason.isNotBlank()) 240.dp else 220.dp)
             .clickable {
-                navController.navigate(Screen.Detail.route)
+                navController.navigate(Screen.Detail.createRoute(matchedDog.postId))
             },
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
-                model = imageUrl,
+                model = reportImageModel(matchedDog.imageUrl),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -252,7 +332,7 @@ fun MatchCard(
                     )
             )
 
-            val badgeBgColor = if (matchPercentage > 90) Color(0xFF4CAF50) else color
+            val badgeBgColor = if (matchedDog.matchPercentage > 90) Color(0xFF4CAF50) else color
             Box(
                 modifier = Modifier
                     .padding(16.dp)
@@ -270,7 +350,7 @@ fun MatchCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "$matchPercentage% Match",
+                        text = "${matchedDog.matchPercentage}% Match",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 12.sp
@@ -284,18 +364,27 @@ fun MatchCard(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = name,
+                    text = matchedDog.name,
                     color = Color.White,
                     fontWeight = FontWeight.Black,
                     fontSize = 22.sp
                 )
                 Text(
-                    text = breed,
+                    text = matchedDog.breed,
                     color = Color.White.copy(alpha = 0.9f),
                     fontWeight = FontWeight.Medium,
                     fontSize = 15.sp,
                     modifier = Modifier.padding(top = 2.dp)
                 )
+                if (matchedDog.reason.isNotBlank()) {
+                    Text(
+                        text = matchedDog.reason,
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                        maxLines = 2
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -308,7 +397,7 @@ fun MatchCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "$location • $timeText",
+                        text = "${matchedDog.location} • ${matchedDog.timeText}",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp
                     )

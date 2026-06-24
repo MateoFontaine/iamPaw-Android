@@ -14,7 +14,9 @@ sealed class Screen(val route: String) {
     object AISearch : Screen("ai_search_screen")
 
 
-    object Detail : Screen("detail_screen")
+    object Detail : Screen("detail_screen/{postId}") {
+        fun createRoute(postId: String) = "detail_screen/$postId"
+    }
 
 
     object Profile : Screen("profile_screen")

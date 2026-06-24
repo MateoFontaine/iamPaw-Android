@@ -1,17 +1,24 @@
 package com.example.iampaw.components.detail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.iampaw.domain.IPawRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
-    private val repository: IPawRepository
+    private val repository: IPawRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val postId: String = checkNotNull(savedStateHandle["postId"])
 
     private val _uiState = MutableStateFlow(DetailState())
     val uiState: StateFlow<DetailState> = _uiState.asStateFlow()
@@ -20,7 +27,29 @@ class DetailViewModel @Inject constructor(
         loadDogDetails()
     }
 
+    fun markAsResolved(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isResolving = true, resolveError = null) }
+            repository.markReportResolved(postId)
+                .onSuccess {
+                    loadDogDetails()
+                    _uiState.update { it.copy(isResolving = false) }
+                    onSuccess()
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isResolving = false,
+                            resolveError = error.message ?: "No se pudo marcar como resuelto"
+                        )
+                    }
+                }
+        }
+    }
+
     private fun loadDogDetails() {
-        _uiState.value = repository.getDogDetail("1")
+        viewModelScope.launch {
+            _uiState.value = repository.getDogDetail(postId)
+        }
     }
 }

@@ -4,8 +4,10 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.iampaw.components.feed.FeedScreen
 import com.example.iampaw.components.splash.SplashScreen
 import com.example.iampaw.components.login.LoginScreen
@@ -57,7 +59,10 @@ fun NavigationStack(navController: NavHostController) {
         }
 
         // CU-05: Detalle del Reporte
-        composable(route = Screen.Detail.route) {
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(navArgument("postId") { type = NavType.StringType })
+        ) {
             DetailScreen(navController = navController)
         }
 

@@ -16,6 +16,9 @@ import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -29,6 +32,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.iampaw.components.commons.reportImageModel
+import com.example.iampaw.data.ContactPhoneFormatter
 
 @Composable
 fun DetailScreen(
@@ -41,6 +46,36 @@ fun DetailScreen(
 
     // Observamos el estado reactivo del ViewModel
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showResolveDialog by remember { mutableStateOf(false) }
+
+    if (showResolveDialog) {
+        AlertDialog(
+            onDismissRequest = { showResolveDialog = false },
+            title = { Text("¿Mascota reunida?") },
+            text = {
+                Text(
+                    "Confirmá que ${state.name} ya está con su dueño. " +
+                        "Tu publicación dejará de mostrarse en el feed."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResolveDialog = false
+                        viewModel.markAsResolved { navController.popBackStack() }
+                    },
+                    enabled = !state.isResolving
+                ) {
+                    Text("Sí, marcar resuelto")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResolveDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -54,7 +89,7 @@ fun DetailScreen(
                 .height(380.dp)
         ) {
             AsyncImage(
-                model = state.imageUrl,
+                model = reportImageModel(state.imageUrl),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -90,13 +125,25 @@ fun DetailScreen(
         ) {
             // Badge de Estado
             Surface(
-                color = if (state.isLost) Color(0xFFFFEBEE) else Color(0xFFE8F5E9),
+                color = when {
+                    state.isResolved -> Color(0xFFE8F5E9)
+                    state.isLost -> Color(0xFFFFEBEE)
+                    else -> Color(0xFFE8F5E9)
+                },
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Text(
-                    text = if (state.isLost) "PERDIDO" else "ENCONTRADO",
-                    color = if (state.isLost) Color(0xFFD32F2F) else Color(0xFF2E7D32),
+                    text = when {
+                        state.isResolved -> "REUNIDO"
+                        state.isLost -> "PERDIDO"
+                        else -> "ENCONTRADO"
+                    },
+                    color = when {
+                        state.isResolved -> Color(0xFF2E7D32)
+                        state.isLost -> Color(0xFFD32F2F)
+                        else -> Color(0xFF2E7D32)
+                    },
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -106,6 +153,18 @@ fun DetailScreen(
             // Nombre y Raza
             Text(text = state.name, fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.Black)
             Text(text = state.breed, fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+
+            if (state.color.isNotBlank() || state.size.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = listOfNotNull(
+                        state.color.takeIf { it.isNotBlank() },
+                        state.size.takeIf { it.isNotBlank() }
+                    ).joinToString(" • "),
+                    fontSize = 14.sp,
+                    color = Color.DarkGray
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -118,75 +177,141 @@ fun DetailScreen(
 
             Divider(modifier = Modifier.padding(vertical = 20.dp), color = Color(0xFFEEEEEE))
 
-            // --- BLOQUE ANÁLISIS DE IA (EXIGIDO EN EL CU-05) ---
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
+            // --- BLOQUE ANÁLISIS DE IA ---
+            if (state.aiAnalysis.isNotBlank()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Outlined.AutoAwesome, contentDescription = "IA", tint = orangePaw)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Análisis de Rasgos por iamPaw AI", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFE65100))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(state.aiAnalysis, fontSize = 13.sp, color = Color.DarkGray, lineHeight = 18.sp)
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(Icons.Outlined.AutoAwesome, contentDescription = "IA", tint = orangePaw)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Análisis de Rasgos por iamPaw AI", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFE65100))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(state.aiAnalysis, fontSize = 13.sp, color = Color.DarkGray, lineHeight = 18.sp)
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
             // Descripción del usuario
-            Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-            Text(
-                text = state.description,
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 6.dp),
-                lineHeight = 20.sp
-            )
+            if (state.description.isNotBlank()) {
+                Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                Text(
+                    text = state.description,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 6.dp),
+                    lineHeight = 20.sp
+                )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- ACCIONES IMPLÍCITAS (INTENTS EXIGIDOS EN EL PDF) ---
-            // Botón Google Maps
-            OutlinedButton(
-                onClick = {
-                    val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${state.location}, Pinamar, Argentina"))
-                    context.startActivity(mapIntent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.DarkGray)
-            ) {
-                Icon(Icons.Outlined.LocationOn, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Ver Zona en Mapa", fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(32.dp))
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            if (state.isResolved) {
+                Text(
+                    text = "Este caso ya fue resuelto. La mascota está con su dueño.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF2E7D32),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
-            // Botón Contactar por WhatsApp
-            Button(
-                onClick = {
-                    val whatsappIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=5492254000000&text=Hola! Vengo de iamPaw, creo que vi a tu mascota ${state.name}."))
-                    context.startActivity(whatsappIntent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = orangePaw)
-            ) {
-                Icon(Icons.Outlined.Phone, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Contactar al Dueño (WhatsApp)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            state.resolveError?.let { error ->
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+            }
+
+            if (state.isOwner && !state.isResolved) {
+                Button(
+                    onClick = { showResolveDialog = true },
+                    enabled = !state.isResolving,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                ) {
+                    if (state.isResolving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Text("Marcar como resuelto", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (!state.isResolved && !state.isOwner) {
+                val whatsappPhone = ContactPhoneFormatter.normalizeForWhatsApp(state.contactPhone)
+
+                OutlinedButton(
+                    onClick = {
+                        val mapIntent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("geo:0,0?q=${state.location}, Pinamar, Argentina")
+                        )
+                        context.startActivity(mapIntent)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.DarkGray)
+                ) {
+                    Icon(Icons.Outlined.LocationOn, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Ver Zona en Mapa", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (whatsappPhone != null) {
+                    Button(
+                        onClick = {
+                            val whatsappIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(
+                                    "https://api.whatsapp.com/send?phone=$whatsappPhone" +
+                                        "&text=Hola! Vengo de iamPaw, creo que vi a tu mascota ${state.name}."
+                                )
+                            )
+                            context.startActivity(whatsappIntent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = orangePaw)
+                    ) {
+                        Icon(Icons.Outlined.Phone, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Contactar por WhatsApp", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                } else {
+                    Text(
+                        text = "El autor no cargó teléfono de contacto en su perfil.",
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
