@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
@@ -36,7 +37,7 @@ fun MatchScreen(
     viewModel: MatchViewModel = hiltViewModel()
 ) {
     // Observamos el estado reactivo del ViewModel
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     val orangePaw = Color(0xFFFF9800)
     val bgColor = Color(0xFFFBFBFB)
