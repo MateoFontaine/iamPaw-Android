@@ -26,14 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 
 @Composable
 fun DetailScreen(
     navController: NavController,
-    viewModel: DetailViewModel = viewModel() // Inyectamos el ViewModel
+    viewModel: DetailViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val orangePaw = Color(0xFFFF9800)

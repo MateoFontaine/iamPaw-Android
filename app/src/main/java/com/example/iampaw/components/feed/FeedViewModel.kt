@@ -1,16 +1,17 @@
 package com.example.iampaw.components.feed
 
 import androidx.lifecycle.ViewModel
-import com.example.iampaw.data.PawMockDataSource
-import com.example.iampaw.data.PawRepository
+import com.example.iampaw.domain.IPawRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
-class FeedViewModel : ViewModel() {
-
-    // 1. Instanciamos el repositorio con nuestra fuente de datos
-    private val repository = PawRepository(PawMockDataSource())
+@HiltViewModel
+class FeedViewModel @Inject constructor(
+    private val repository: IPawRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FeedState())
     val uiState: StateFlow<FeedState> = _uiState.asStateFlow()
@@ -20,7 +21,6 @@ class FeedViewModel : ViewModel() {
     }
 
     private fun loadFeed() {
-        // 2. Adiós a la lista hardcodeada. Le pedimos los datos al repositorio.
         _uiState.value = FeedState(
             posts = repository.getFeedDogs()
         )

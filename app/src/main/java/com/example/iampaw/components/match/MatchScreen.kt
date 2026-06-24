@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
@@ -33,7 +33,7 @@ import com.example.iampaw.components.Screen
 @Composable
 fun MatchScreen(
     navController: NavController,
-    viewModel: MatchViewModel = viewModel() // Inyectamos el ViewModel
+    viewModel: MatchViewModel = hiltViewModel()
 ) {
     // Observamos el estado reactivo del ViewModel
     val state by viewModel.uiState.collectAsState()
