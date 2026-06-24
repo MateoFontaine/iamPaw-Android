@@ -14,6 +14,7 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | Room (offline-first) | ✅ Hecho | Feed observa Room con Flow |
 | Firestore | ✅ Hecho | Sync remota de reportes con Room |
 | Tests (MockK) | ✅ Hecho | FeedViewModel + LoginViewModel (5 tests JVM) |
+| collectAsStateWithLifecycle | ✅ Hecho | 6 pantallas Compose (PR `feature/lifecycle-state`) |
 | Glide + Splash API | ⬜ Pendiente | Requisitos TPO |
 | IA generativa | ⬜ Pendiente | Match / Report |
 | Android Profiler | ⬜ Pendiente | Informe técnico |
@@ -28,8 +29,9 @@ Referencia del profe: [2026DA1 — feature/inyeccion-dependencias](https://githu
 | 20/06 | `feature/room-offline-first` | Room: Entity, Dao, Database, Feed offline-first. Pendiente: probar en device. |
 | 23/06 | `feature/firestore-sync` | Firestore: saveReport + syncReportsFromFirestore. ReportScreen publica al Feed. |
 | 23/06 | `feature/tests-unitarios` | Tests unitarios: FakePawRepository, FeedViewModelTest, LoginViewModelTest. |
+| 23/06 | `feature/lifecycle-state` | `collectAsStateWithLifecycle` en Feed, Login, Detail, Match, Profile, Report. |
 
-**Rama actual:** `feature/tests-unitarios`
+**Rama actual:** `feature/lifecycle-state`
 
 **PR Hilt pendiente:** [Abrir PR → develop](https://github.com/MateoFontaine/iamPaw-Android/pull/new/feature/inyeccion-dependencias)
 
@@ -246,15 +248,37 @@ app/src/test/java/com/example/iampaw/
 
 ---
 
+## 5. collectAsStateWithLifecycle — ✅ Hecho
+
+**Rama:** `feature/lifecycle-state` (desde `develop`)
+
+### Checklist
+
+- [x] Dependencia `lifecycle-runtime-compose`
+- [x] `FeedScreen`, `LoginScreen`, `DetailScreen`, `MatchScreen`, `ProfileScreen`, `ReportScreen`
+- [x] `BreedAutocompleteList` en Report (lista de razas)
+
+### Qué cambia
+
+`collectAsState()` → `collectAsStateWithLifecycle()`: la UI deja de observar el ViewModel cuando la pantalla no está visible (ahorro de recursos en background).
+
+### Cómo correr / verificar
+
+Sync Gradle → Run app → navegar pantallas; comportamiento visual igual al anterior.
+
+---
+
 ## Orden recomendado hasta la entrega
 
 1. ✅ Hilt
 2. ✅ Room (feed offline-first)
 3. ✅ Firestore (reportes en la nube)
 4. ✅ Tests unitarios
-5. ⬜ Glide + Splash API + `collectAsStateWithLifecycle`
-6. ⬜ IA generativa (Gemini en Match)
-7. ⬜ Informe Android Profiler
+5. ✅ collectAsStateWithLifecycle
+6. ⬜ Room sync deletes (borrar local si no está en Firebase)
+7. ⬜ Glide + Splash API
+8. ⬜ IA generativa (Gemini en Match)
+9. ⬜ Informe Android Profiler
 
 ---
 

@@ -40,20 +40,26 @@ fun FeedScreen(
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     var feedSearchText by remember { mutableStateOf("") }
+    var statusFilter by remember { mutableStateOf("Todos") }
 
     // Filtro 100% local: escribir no toca Room ni el ViewModel → no pierde foco
-    val filteredPosts = remember(state.posts, feedSearchText) {
+    val filteredPosts = remember(state.posts, feedSearchText, statusFilter) {
         val query = feedSearchText.trim().lowercase()
-        if (query.isEmpty()) {
-            state.posts
-        } else {
-            state.posts.filter { post ->
-                post.name.lowercase().contains(query) ||
+        state.posts
+            .filter { post ->
+                when (statusFilter) {
+                    "Perdidos" -> post.status.contains("Perdido", ignoreCase = true)
+                    "Encontrados" -> post.status.contains("Encontrado", ignoreCase = true)
+                    else -> true
+                }
+            }
+            .filter { post ->
+                query.isEmpty() ||
+                    post.name.lowercase().contains(query) ||
                     post.breed.lowercase().contains(query) ||
                     post.location.lowercase().contains(query) ||
                     post.status.lowercase().contains(query)
             }
-        }
     }
 
     Box(
@@ -222,7 +228,13 @@ fun FeedScreen(
                 sheetState = sheetState,
                 containerColor = Color.White
             ) {
-                FilterContent { showFilters = false }
+                FilterContent(
+                    initialStatus = statusFilter,
+                    onApply = { selected ->
+                        statusFilter = selected
+                        showFilters = false
+                    }
+                )
             }
         }
     }
@@ -230,8 +242,11 @@ fun FeedScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FilterContent(onApply: () -> Unit) {
-    var selectedStatus by remember { mutableStateOf("Todos") }
+fun FilterContent(
+    initialStatus: String = "Todos",
+    onApply: (String) -> Unit
+) {
+    var selectedStatus by remember(initialStatus) { mutableStateOf(initialStatus) }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(24.dp).padding(bottom = 32.dp)
@@ -266,7 +281,7 @@ fun FilterContent(onApply: () -> Unit) {
 
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = onApply,
+            onClick = { onApply(selectedStatus) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
             shape = RoundedCornerShape(16.dp)
