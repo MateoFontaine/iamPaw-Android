@@ -1,6 +1,5 @@
 package com.example.iampaw.components.feed
 
-// El modelo de datos
 data class DogPost(
     val id: String,
     val name: String,
@@ -12,5 +11,7 @@ data class DogPost(
 )
 
 data class FeedState(
-    val posts: List<DogPost> = emptyList()
+    val posts: List<DogPost> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )

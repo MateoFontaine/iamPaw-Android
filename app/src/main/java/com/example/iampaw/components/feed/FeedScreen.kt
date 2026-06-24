@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,41 +26,70 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.iampaw.components.Screen
-import com.example.iampaw.components.report.ReportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     navController: NavController,
-    feedViewModel: FeedViewModel = hiltViewModel(),
-    reportViewModel: ReportViewModel = hiltViewModel()
+    feedViewModel: FeedViewModel = hiltViewModel()
 ) {
-    // Escuchamos el estado que viene del ViewModel
     val state by feedViewModel.uiState.collectAsState()
 
-    // Estados visuales locales
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    var feedSearchText by remember { mutableStateOf("") }
 
-    // Estados para el buscador de razas
-    val breeds by reportViewModel.breeds.collectAsState()
-    var searchBreedText by remember { mutableStateOf("") }
-    var expandedBreedSearch by remember { mutableStateOf(false) }
+    // Filtro 100% local: escribir no toca Room ni el ViewModel → no pierde foco
+    val filteredPosts = remember(state.posts, feedSearchText) {
+        val query = feedSearchText.trim().lowercase()
+        if (query.isEmpty()) {
+            state.posts
+        } else {
+            state.posts.filter { post ->
+                post.name.lowercase().contains(query) ||
+                    post.breed.lowercase().contains(query) ||
+                    post.location.lowercase().contains(query) ||
+                    post.status.lowercase().contains(query)
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFBFBFB))
     ) {
-        // --- CAPA 1: EL FEED ---
+        if (state.isLoading && state.posts.isEmpty()) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = Color(0xFFFF9800)
+            )
+        }
+
+        state.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+            )
+        }
+
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = 120.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item {
-                Column(modifier = Modifier.statusBarsPadding()) {
-                    // HEADER
+            item(key = "feed_header") {
+                Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -78,66 +108,31 @@ fun FeedScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // BARRA DE BÚSQUEDA Y FILTROS
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        ExposedDropdownMenuBox(
-                            expanded = expandedBreedSearch,
-                            onExpandedChange = { expandedBreedSearch = !expandedBreedSearch },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            OutlinedTextField(
-                                value = searchBreedText,
-                                onValueChange = {
-                                    searchBreedText = it
-                                    expandedBreedSearch = true
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor(),
-                                placeholder = { Text("Buscar raza...") },
-                                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = Color(0xFFFF9800)) },
-                                trailingIcon = {
-                                    if (searchBreedText.isNotEmpty()) {
-                                        IconButton(onClick = { searchBreedText = "" }) {
-                                            Icon(Icons.Outlined.Close, contentDescription = "Borrar", modifier = Modifier.size(18.dp))
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFFFF9800),
-                                    unfocusedBorderColor = Color(0xFFEEEEEE),
-                                    unfocusedContainerColor = Color.White,
-                                    focusedContainerColor = Color.White
-                                ),
-                                singleLine = true
-                            )
-
-                            val filteredOptions = breeds.filter { it.name.contains(searchBreedText, ignoreCase = true) }
-                            if (filteredOptions.isNotEmpty() && searchBreedText.isNotEmpty()) {
-                                ExposedDropdownMenu(
-                                    expanded = expandedBreedSearch,
-                                    onDismissRequest = { expandedBreedSearch = false },
-                                    modifier = Modifier.background(Color.White)
-                                ) {
-                                    filteredOptions.take(4).forEach { breed ->
-                                        DropdownMenuItem(
-                                            text = { Text(breed.name, fontWeight = FontWeight.Medium) },
-                                            onClick = {
-                                                searchBreedText = breed.name
-                                                expandedBreedSearch = false
-                                            }
-                                        )
+                        OutlinedTextField(
+                            value = feedSearchText,
+                            onValueChange = { feedSearchText = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Buscar por nombre o raza") },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.Search, contentDescription = null)
+                            },
+                            trailingIcon = {
+                                if (feedSearchText.isNotEmpty()) {
+                                    IconButton(onClick = { feedSearchText = "" }) {
+                                        Icon(Icons.Outlined.Close, contentDescription = "Borrar")
                                     }
                                 }
-                            }
-                        }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
 
                         Surface(
                             onClick = { showFilters = true },
@@ -155,13 +150,29 @@ fun FeedScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text("Cerca de tu ubicación", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Cerca de tu ubicación",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
-            // LISTA DE MASCOTAS
-            items(state.posts) { post ->
+            if (!state.isLoading && filteredPosts.isEmpty()) {
+                item(key = "feed_empty") {
+                    Text(
+                        text = "No se encontraron mascotas",
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            items(filteredPosts, key = { it.id }) { post ->
                 DogImmersiveCard(
                     post = post,
                     onClick = { navController.navigate(Screen.Detail.route) }
@@ -169,7 +180,7 @@ fun FeedScreen(
             }
         }
 
-        // --- CAPA 2: NAVBAR BURBUJA ---
+        // Navbar burbuja — único elemento fijo
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -203,7 +214,6 @@ fun FeedScreen(
             }
         }
 
-        // --- CAPA 3: MODAL DE FILTROS RÁPIDOS ---
         if (showFilters) {
             ModalBottomSheet(
                 onDismissRequest = { showFilters = false },
