@@ -29,6 +29,12 @@ interface IPawDao {
     @Query("SELECT * FROM pet_reports WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): PetReportLocal?
 
+    @Query("SELECT id FROM pet_reports WHERE userId != ''")
+    suspend fun getSyncedReportIds(): List<String>
+
+    @Query("DELETE FROM pet_reports WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(reports: List<PetReportLocal>)
 }
