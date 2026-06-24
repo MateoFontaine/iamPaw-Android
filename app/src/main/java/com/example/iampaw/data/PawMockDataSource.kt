@@ -30,8 +30,25 @@ class PawMockDataSource @Inject constructor() : IPawDataSource {
 
     override fun getMatchedDogs(): List<MatchedDog> {
         return listOf(
-            MatchedDog("Bobby", "Golden Retriever", "Pinamar Centro", "Perdido hace 2 días", 96, "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600"),
-            MatchedDog("Sin nombre", "Mestizo / Labrador", "Cariló", "Visto merodeando hoy", 81, "https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?auto=format&fit=crop&q=80&w=600")
+            MatchedDog(
+                postId = "mock-1",
+                name = "Bobby",
+                breed = "Golden Retriever",
+                location = "Pinamar Centro",
+                timeText = "Perdido hace 2 días",
+                matchPercentage = 96,
+                imageUrl = "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600",
+                reason = "Misma raza y tamaño"
+            ),
+            MatchedDog(
+                postId = "mock-2",
+                name = "Sin nombre",
+                breed = "Mestizo / Labrador",
+                location = "Cariló",
+                timeText = "Visto merodeando hoy",
+                matchPercentage = 81,
+                imageUrl = "https://images.unsplash.com/photo-1591768575198-88dac53fbd0a?auto=format&fit=crop&q=80&w=600"
+            )
         )
     }
 

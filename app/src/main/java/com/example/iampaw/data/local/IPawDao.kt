@@ -23,11 +23,17 @@ interface IPawDao {
     )
     fun search(query: String): Flow<List<PetReportLocal>>
 
+    @Query("SELECT * FROM pet_reports ORDER BY createdAt DESC")
+    suspend fun getAll(): List<PetReportLocal>
+
     @Query("SELECT COUNT(*) FROM pet_reports")
     suspend fun count(): Int
 
     @Query("SELECT * FROM pet_reports WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): PetReportLocal?
+
+    @Query("SELECT * FROM pet_reports WHERE userId = :userId")
+    suspend fun getByUserId(userId: String): List<PetReportLocal>
 
     @Query("SELECT id FROM pet_reports WHERE userId != ''")
     suspend fun getSyncedReportIds(): List<String>

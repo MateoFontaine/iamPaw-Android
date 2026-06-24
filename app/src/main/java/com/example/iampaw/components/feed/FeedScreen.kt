@@ -183,7 +183,7 @@ fun FeedScreen(
             items(filteredPosts, key = { it.id }) { post ->
                 DogImmersiveCard(
                     post = post,
-                    onClick = { navController.navigate(Screen.Detail.route) }
+                    onClick = { navController.navigate(Screen.Detail.createRoute(post.id)) }
                 )
             }
         }

@@ -7,7 +7,12 @@ data class DogPost(
     val location: String,
     val time: String,
     val imageUrl: String,
-    val status: String
+    val status: String,
+    val color: String = "",
+    val size: String = "",
+    val details: String = "",
+    val aiAnalysis: String = "",
+    val contactPhone: String = ""
 )
 
 data class FeedState(
