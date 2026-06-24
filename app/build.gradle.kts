@@ -30,6 +30,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "DOG_API_KEY", "\"${localProperties.getProperty("DOG_API_KEY")}\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"${localProperties.getProperty("GEMINI_API_KEY")}\"")
     }
 
     buildTypes {
@@ -79,6 +80,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.gms:play-services-location:21.2.0")
+    implementation(libs.generativeai)
 
     // --- HILT (DI) ---
     implementation(libs.hilt.android)
@@ -95,4 +97,15 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+// Evita conflicto gRPC entre Firestore y el SDK de Gemini (issue firebase-android-sdk#7587)
+configurations.configureEach {
+    resolutionStrategy {
+        force("io.grpc:grpc-protobuf-lite:1.57.2")
+        force("io.grpc:grpc-android:1.57.2")
+        force("io.grpc:grpc-okhttp:1.57.2")
+        force("io.grpc:grpc-core:1.57.2")
+        force("io.grpc:grpc-stub:1.57.2")
+    }
 }

@@ -4,8 +4,10 @@ import android.util.Log
 import com.example.iampaw.components.detail.DetailState
 import com.example.iampaw.components.feed.DogPost
 import com.example.iampaw.components.match.MatchedDog
+import com.example.iampaw.components.report.ReportDraft
 import com.example.iampaw.data.local.IPawDao
 import com.example.iampaw.data.local.ReportImageStorage
+import com.example.iampaw.data.local.toDetailState
 import com.example.iampaw.data.local.toDogPosts
 import com.example.iampaw.data.local.toLocal
 import com.example.iampaw.data.remote.FirestoreReportDataSource
@@ -21,7 +23,6 @@ private const val TAG = "PawRepository"
 @Singleton
 class PawRepository @Inject constructor(
     private val pawDao: IPawDao,
-    private val mockDataSource: PawMockDataSource,
     private val apiDataSource: PawApiDataSource,
     private val firestoreDataSource: FirestoreReportDataSource,
     private val firebaseAuth: FirebaseAuth,
@@ -33,12 +34,7 @@ class PawRepository @Inject constructor(
 
     override suspend fun refreshFeedIfEmpty() {
         if (pawDao.count() == 0) {
-            val now = System.currentTimeMillis()
-            pawDao.insertAll(
-                mockDataSource.getFeedDogs().mapIndexed { index, post ->
-                    post.toLocal(createdAt = now - index)
-                }
-            )
+            Log.d(TAG, "Feed vacío — esperando reportes del usuario")
         }
     }
 
@@ -72,7 +68,6 @@ class PawRepository @Inject constructor(
                 pawDao.insertAll(remoteReports)
             }
 
-            // Solo reportes de usuario/Firestore (userId != ""). Los mock seed quedan.
             val idsToDelete = pawDao.getSyncedReportIds().filter { it !in remoteIds }
             if (idsToDelete.isNotEmpty()) {
                 idsToDelete.forEach { reportImageStorage.deleteReportImage(it) }
@@ -84,9 +79,22 @@ class PawRepository @Inject constructor(
         }
     }
 
-    override fun getDogDetail(id: String): DetailState = mockDataSource.getDogDetail(id)
+    override suspend fun getDogDetail(id: String): DetailState =
+        pawDao.getById(id)?.toDetailState() ?: DetailState()
 
-    override fun getMatchedDogs(): List<MatchedDog> = mockDataSource.getMatchedDogs()
+    override fun getMatchedDogs(): List<MatchedDog> = emptyList()
+
+    override suspend fun getMatchCandidates(draft: ReportDraft): List<DogPost> {
+        val oppositeStatus = when {
+            draft.status.contains("Perdido", ignoreCase = true) -> "Encontrado"
+            draft.status.contains("Encontrado", ignoreCase = true) -> "Perdido"
+            else -> return emptyList()
+        }
+
+        return pawDao.getAll()
+            .toDogPosts()
+            .filter { post -> post.status.contains(oppositeStatus, ignoreCase = true) }
+    }
 
     override suspend fun getBreeds(): List<DogBreed> = apiDataSource.getBreeds()
 }
