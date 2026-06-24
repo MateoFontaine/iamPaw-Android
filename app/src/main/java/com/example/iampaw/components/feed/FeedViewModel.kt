@@ -1,28 +1,48 @@
 package com.example.iampaw.components.feed
 
 import androidx.lifecycle.ViewModel
-import com.example.iampaw.data.PawMockDataSource
-import com.example.iampaw.data.PawRepository
+import androidx.lifecycle.viewModelScope
+import com.example.iampaw.domain.IPawRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class FeedViewModel : ViewModel() {
+@HiltViewModel
+class FeedViewModel @Inject constructor(
+    private val repository: IPawRepository
+) : ViewModel() {
 
-    // 1. Instanciamos el repositorio con nuestra fuente de datos
-    private val repository = PawRepository(PawMockDataSource())
-
-    private val _uiState = MutableStateFlow(FeedState())
+    private val _uiState = MutableStateFlow(FeedState(isLoading = true))
     val uiState: StateFlow<FeedState> = _uiState.asStateFlow()
 
     init {
-        loadFeed()
+        observeFeed()
     }
 
-    private fun loadFeed() {
-        // 2. Adiós a la lista hardcodeada. Le pedimos los datos al repositorio.
-        _uiState.value = FeedState(
-            posts = repository.getFeedDogs()
-        )
+    private fun observeFeed() {
+        viewModelScope.launch {
+            try {
+                repository.refreshFeedIfEmpty()
+                repository.syncReportsFromFirestore()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                return@launch
+            }
+
+            repository.observeFeed()
+                .catch { e ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                }
+                .collect { posts ->
+                    _uiState.update {
+                        it.copy(posts = posts, isLoading = false, errorMessage = null)
+                    }
+                }
+        }
     }
 }

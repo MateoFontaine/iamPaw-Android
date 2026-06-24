@@ -4,7 +4,9 @@ import java.io.FileInputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
+    id("com.google.dagger.hilt.android")
 }
 
 
@@ -27,7 +29,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "DOG_API_KEY", "\"${localProperties.getProperty("DOG_API_KEY")}\"")
+        buildConfigField("String", "DOG_API_KEY", "\"${localProperties.getProperty("DOG_API_KEY", "")}\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"${localProperties.getProperty("GEMINI_API_KEY", "")}\"")
     }
 
     buildTypes {
@@ -52,7 +55,9 @@ android {
 dependencies {
     // --- LIBRERÍAS BASE DE ANDROID Y COMPOSE ---
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -64,22 +69,45 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
     implementation(platform(libs.firebase.bom))
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("com.google.android.gms:play-services-auth:21.1.1")
+    implementation(libs.glide)
     implementation(libs.glide.compose)
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    ksp(libs.glide.compiler)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.gms:play-services-location:21.2.0")
 
+    // --- HILT (DI) ---
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
     // --- TESTING ---
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+// Evita conflicto gRPC entre Firestore y el SDK de Gemini (issue firebase-android-sdk#7587)
+configurations.configureEach {
+    resolutionStrategy {
+        force("io.grpc:grpc-protobuf-lite:1.57.2")
+        force("io.grpc:grpc-android:1.57.2")
+        force("io.grpc:grpc-okhttp:1.57.2")
+        force("io.grpc:grpc-core:1.57.2")
+        force("io.grpc:grpc-stub:1.57.2")
+    }
 }

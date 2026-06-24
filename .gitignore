@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+.demo-2026DA1/
+
+# Prompts locales de desarrollo (no van al repo)
+PROMPT_*.md
