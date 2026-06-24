@@ -230,15 +230,6 @@ feature/*  →  develop  →  main
 
 ---
 
-## Referencias
-
-- [AnimeApp — inyección de dependencias (curso DA1)](https://github.com/ngladkoff/2026DA1/tree/feature/inyeccion-dependencias)
-- [Documentación Jetpack Compose](https://developer.android.com/jetpack/compose)
-- [Room Persistence Library](https://developer.android.com/training/data-storage/room)
-- [Gemini API REST](https://ai.google.dev/gemini-api/docs)
-
----
-
 ## Licencia
 
 Proyecto académico — TPO Desarrollo de Aplicaciones I, UADE 2026.
